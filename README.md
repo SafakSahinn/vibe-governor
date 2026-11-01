@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/vibe-governor)](https://www.npmjs.com/package/vibe-governor)
 [![license](https://img.shields.io/npm/l/vibe-governor)](https://github.com/SafakSahinn/vibe-governor/blob/main/LICENSE)
 
-**English** · [Türkçe](https://github.com/SafakSahinn/vibe-governor/blob/main/README.tr.md)
+**English** · [Türkçe](https://github.com/SafakSahinn/vibe-governor/blob/main/BENIOKU.md)
 
 Guardrails for AI-assisted ("vibe coding") projects, both software and hardware (Verilog/VHDL).
 Vibe Governor installs one shared rule set for all your AI coding assistants, a **Memory Bank** that

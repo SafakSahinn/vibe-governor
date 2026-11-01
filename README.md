@@ -90,3 +90,7 @@ Ardından tarayıcınızdan `http://localhost:3000` adresine gidin.
 npm run build
 npm run start
 ```
+
+## 📄 Lisans
+
+[MIT](LICENSE) © 2026 SafakSahinn

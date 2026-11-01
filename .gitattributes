@@ -1,0 +1,5 @@
+# LF everywhere: the npm-published CLI is packed from the working tree, and a CRLF
+# shebang/bundle breaks on macOS/Linux (core.autocrlf=true on Windows would add CR).
+* text=auto eol=lf
+*.png binary
+*.ico binary

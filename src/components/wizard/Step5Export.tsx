@@ -6,7 +6,10 @@ import { generateCliCommand } from "@/lib/templateEngine";
 import { exportProjectZip } from "@/lib/exporter";
 import { FileTree } from "./FileTree";
 import { CodeViewer } from "./CodeViewer";
-import { Download, Terminal, Copy, Check, Sparkles, FolderArchive, Layers } from "lucide-react";
+import { Download, Terminal, Copy, Check, Sparkles, FolderArchive, Layers, AlertTriangle } from "lucide-react";
+
+/** Longest command line Windows cmd.exe accepts. */
+const WINDOWS_CMD_LIMIT = 8191;
 
 interface Step5Props {
   data: WizardFormData;
@@ -165,6 +168,16 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
             ? "Proje klasörünüzde çalıştırın (Node.js 18+ gerekir). --preset bu sihirbazdaki tüm seçimlerinizi taşır; aynı dosyalar yazılır, varsa .git/hooks/pre-commit kurulur. Mevcut dosyalar korunur (--force ile üzerine yazılır)."
             : "Run it inside your project folder (requires Node.js 18+). --preset carries every choice made in this wizard; the same files are written and .git/hooks/pre-commit is installed when a git repo exists. Existing files are kept (use --force to overwrite)."}
         </p>
+        {cliCommand.length > WINDOWS_CMD_LIMIT && (
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/50 text-amber-200 text-[11px] leading-relaxed">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>
+              {isTr
+                ? `Komut ${cliCommand.length.toLocaleString("tr-TR")} karakter. Windows cmd 8.191, PowerShell 32.767 karakterden uzun komutları keser. Memory Bank metinlerini kısaltın ya da ZIP paketini indirin.`
+                : `This command is ${cliCommand.length.toLocaleString("en-US")} characters. Windows cmd truncates commands over 8,191 and PowerShell over 32,767 characters. Shorten the Memory Bank texts or download the ZIP pack instead.`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Main Two-Panel Layout (Left: File Tree, Right: Code Viewer) */}

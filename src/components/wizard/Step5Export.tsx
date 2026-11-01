@@ -165,6 +165,19 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
             ? "Proje klasörünüzde çalıştırın (Node.js 18+ gerekir). --preset bu sihirbazdaki tüm seçimlerinizi taşır; aynı dosyalar yazılır, varsa .git/hooks/pre-commit kurulur. Mevcut dosyalar korunur (--force ile üzerine yazılır)."
             : "Run it inside your project folder (requires Node.js 18+). --preset carries every choice made in this wizard; the same files are written and .git/hooks/pre-commit is installed when a git repo exists. Existing files are kept (use --force to overwrite)."}
         </p>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          {isTr ? (
+            <>
+              Ayarlar pakete <code className="text-indigo-300">vibe-governor.json</code> olarak kaydedilir. Sonradan değiştirmek için{" "}
+              <code className="text-indigo-300">npx -y vibe-governor update --max-lines=600</code> gibi bir komut yeterlidir; elle düzenlediğiniz dosyalar ve Memory Bank korunur.
+            </>
+          ) : (
+            <>
+              Settings are saved in the pack as <code className="text-indigo-300">vibe-governor.json</code>. Change them later with e.g.{" "}
+              <code className="text-indigo-300">npx -y vibe-governor update --max-lines=600</code>; hand-edited files and the Memory Bank are preserved.
+            </>
+          )}
+        </p>
         {cliCommand.length > WINDOWS_CMD_LIMIT && (
           <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/50 text-amber-200 text-[11px] leading-relaxed">
             <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />

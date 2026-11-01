@@ -25,6 +25,32 @@ export function encodePreset(data: WizardFormData): string {
 
 export type PresetResult = { ok: true; data: WizardFormData } | { ok: false; error: string };
 
+/**
+ * Validates a wizard configuration coming from a preset, a vibe-governor.json
+ * file (the `config` field is unwrapped) or any JSON value. Keys added in newer
+ * versions are filled with their defaults so older configs keep working.
+ */
+export function parseConfig(input: unknown, label = "Config"): PresetResult {
+  let raw = input;
+  if (raw && typeof raw === "object" && "config" in raw && "formatVersion" in raw) {
+    raw = (raw as { config: unknown }).config;
+  }
+  if (!raw || typeof raw !== "object") return { ok: false, error: `${label} is not a JSON object.` };
+  const obj = { ...(raw as Record<string, unknown>) };
+  if (obj.constraints && typeof obj.constraints === "object") {
+    obj.constraints = { ...DEFAULT_FORM_DATA.constraints, ...(obj.constraints as object) };
+  }
+  if (obj.automation && typeof obj.automation === "object") {
+    obj.automation = { ...DEFAULT_FORM_DATA.automation, ...(obj.automation as object) };
+  }
+  const parsed = wizardSchema.safeParse(obj);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`);
+    return { ok: false, error: `${label} failed validation -> ${issues.join("; ")}` };
+  }
+  return { ok: true, data: parsed.data };
+}
+
 /** Decodes and validates a preset string produced by {@link encodePreset}. */
 export function decodePreset(preset: string): PresetResult {
   let raw: unknown;
@@ -33,17 +59,5 @@ export function decodePreset(preset: string): PresetResult {
   } catch {
     return { ok: false, error: "Preset is not valid base64url-encoded JSON." };
   }
-  // Presets created before newer switches existed lack those keys: fill them with defaults.
-  if (raw && typeof raw === "object" && "constraints" in raw) {
-    const r = raw as { constraints: unknown };
-    if (r.constraints && typeof r.constraints === "object") {
-      r.constraints = { ...DEFAULT_FORM_DATA.constraints, ...(r.constraints as object) };
-    }
-  }
-  const parsed = wizardSchema.safeParse(raw);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`);
-    return { ok: false, error: `Preset failed validation -> ${issues.join("; ")}` };
-  }
-  return { ok: true, data: parsed.data };
+  return parseConfig(raw, "Preset");
 }

@@ -26,7 +26,7 @@ const PYTHON = ["python3", "python", "py"].find(
 function baseConfig(overrides = {}) {
   const base = {
     locale: "en",
-    targetPlatforms: ["CLAUDE_CLI", "ANTIGRAVITY", "CURSOR", "WINDSURF", "CLINE", "GITHUB_COPILOT"],
+    targetPlatforms: ["AGENTS_MD", "CLAUDE_CLI", "GEMINI_CLI", "ANTIGRAVITY", "CURSOR", "WINDSURF", "CLINE", "GITHUB_COPILOT"],
     languages: ALL_LANGS,
     constraints: {
       maxLines: 800, docScoreThreshold: 8, ...Object.fromEntries(ALL_SWITCHES.map((k) => [k, true])),
@@ -236,7 +236,8 @@ test("presets created before newer switches existed are still accepted", () => {
 test("generated pack contains the expected files", () => {
   const dir = scaffold(baseConfig());
   for (const f of [
-    "AI_GUIDELINES.md", "ANTIGRAVITY.md", "CLAUDE.md", ".cursorrules", ".windsurfrules", ".clinerules",
+    "AI_GUIDELINES.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md", ".agents/rules/vibe-governor.md",
+    ".cursor/rules/vibe-governor.mdc", ".windsurf/rules/vibe-governor.md", ".clinerules/vibe-governor.md", "vibe-governor.json",
     ".github/copilot-instructions.md", ".memory_bank/projectbrief.md", ".memory_bank/productContext.md",
     ".memory_bank/systemPatterns.md", ".memory_bank/techContext.md", ".memory_bank/activeContext.md",
     ".memory_bank/progress.md", "scripts/check_guidelines.py", "scripts/pre-commit-hook.sh",

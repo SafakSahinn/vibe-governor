@@ -6,7 +6,9 @@ export type TargetPlatform =
   | "CURSOR"
   | "WINDSURF"
   | "CLINE"
-  | "GITHUB_COPILOT";
+  | "GITHUB_COPILOT"
+  | "AGENTS_MD"
+  | "GEMINI_CLI";
 
 export type CodingLanguage =
   | "C"

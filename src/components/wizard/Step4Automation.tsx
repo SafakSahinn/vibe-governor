@@ -57,9 +57,9 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
       titleEn: "Git Pre-Commit Blocking Hook",
       targetPath: "scripts/pre-commit-hook.sh",
       descTr:
-        "Commit yapmadan önce otomatik denetçiyi çalıştırır. Kural ihlali varsa commit işlemini durdurur.",
+        "Her commit'ten önce yalnızca commit'e giren dosyaları denetler; ihlal varsa commit'i durdurur. Kod değişip Memory Bank güncellenmediyse uyarır.",
       descEn:
-        "Blocks git commit if AI guidelines or line limit rules are violated.",
+        "Checks only the staged files before each commit and blocks it on violations; warns when code changed but the Memory Bank was not updated.",
       icon: <GitBranch className="w-5 h-5 text-emerald-400" />,
       badge: "Bash / Git Hook",
     },

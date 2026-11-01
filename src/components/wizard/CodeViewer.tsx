@@ -28,6 +28,7 @@ function monacoLanguage(language: string): string {
     case "python":
     case "yaml":
     case "shell":
+    case "json":
       return language;
     default:
       return "plaintext";

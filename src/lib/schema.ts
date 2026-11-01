@@ -14,6 +14,8 @@ export const TARGET_PLATFORMS = [
   "WINDSURF",
   "CLINE",
   "GITHUB_COPILOT",
+  "AGENTS_MD",
+  "GEMINI_CLI",
 ] as const;
 
 export const SOFTWARE_LANGUAGES = [
@@ -105,7 +107,7 @@ void _schemaMatchesTypes;
 /** Default form state shared by the web wizard and the CLI. */
 export const DEFAULT_FORM_DATA: WizardFormData = {
   locale: "tr",
-  targetPlatforms: ["ANTIGRAVITY", "CLAUDE_CLI", "CURSOR", "WINDSURF", "CLINE", "GITHUB_COPILOT"],
+  targetPlatforms: ["AGENTS_MD", "CLAUDE_CLI", "CURSOR", "GITHUB_COPILOT"],
   languages: ["TypeScript", "Python", "Rust"],
   constraints: {
     maxLines: 800,

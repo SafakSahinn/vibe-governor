@@ -5,7 +5,8 @@ import { useUiLocale } from "./UiLocale";
 import { checkboxCardProps, FOCUS_RING } from "./a11y";
 import { HDL_LANGUAGES, SOFTWARE_LANGUAGES } from "@/lib/schema";
 import { CodingLanguage, TargetPlatform, WizardFormData } from "@/types/wizard";
-import { Bot, Terminal, Code2, Wind, Cpu, Sparkles, Check } from "lucide-react";
+import { Bot, Terminal, Code2, Wind, Cpu, Sparkles, Check, FileText, Gem } from "lucide-react";
+import { PLATFORM_FILES } from "@/lib/templates/ideRules";
 
 interface Step1Props {
   data: WizardFormData;
@@ -17,55 +18,62 @@ const PLATFORMS: {
   name: string;
   descTr: string;
   descEn: string;
-  fileTarget: string;
   icon: React.ReactNode;
 }[] = [
   {
-    id: "ANTIGRAVITY",
-    name: "AntiGravity AI Agent",
-    descTr: "Kök dizinde ANTIGRAVITY.md ile otonom kodlama ve hafıza yürütme protokolü.",
-    descEn: "Autonomous protocol with ANTIGRAVITY.md in root.",
-    fileTarget: "ANTIGRAVITY.md",
-    icon: <Sparkles className="w-5 h-5 text-indigo-400" />,
+    id: "AGENTS_MD",
+    name: "AGENTS.md (Standard)",
+    descTr: "Açık standart: Codex, Jules, Aider, Zed, Junie, Amp, Devin ve 20+ araç okur. Cursor, Windsurf ve Copilot da destekler.",
+    descEn: "Open standard read by Codex, Jules, Aider, Zed, Junie, Amp, Devin and 20+ tools; Cursor, Windsurf and Copilot support it too.",
+    icon: <FileText className="w-5 h-5 text-indigo-300" />,
   },
   {
     id: "CLAUDE_CLI",
-    name: "Claude CLI",
-    descTr: "Terminal üzerinden 'claude' komutu ile çalışan otomatik kural seti.",
-    descEn: "Automatic rules for terminal 'claude' sessions.",
-    fileTarget: "CLAUDE.md",
+    name: "Claude Code",
+    descTr: "Terminal ve IDE'deki Claude Code oturumlarında otomatik yüklenir.",
+    descEn: "Loaded automatically in Claude Code sessions (terminal and IDE).",
     icon: <Terminal className="w-5 h-5 text-amber-400" />,
   },
   {
+    id: "GEMINI_CLI",
+    name: "Gemini CLI",
+    descTr: "Gemini CLI her istemde proje kökündeki GEMINI.md dosyasını bağlama ekler.",
+    descEn: "Gemini CLI adds the project-root GEMINI.md to every prompt.",
+    icon: <Gem className="w-5 h-5 text-sky-300" />,
+  },
+  {
+    id: "ANTIGRAVITY",
+    name: "Google Antigravity",
+    descTr: "Antigravity çalışma alanı kuralları (.agents/rules). AGENTS.md ve GEMINI.md'yi de okur.",
+    descEn: "Antigravity workspace rules (.agents/rules). It also reads AGENTS.md and GEMINI.md.",
+    icon: <Sparkles className="w-5 h-5 text-indigo-400" />,
+  },
+  {
     id: "CURSOR",
-    name: "Cursor IDE",
-    descTr: "Cursor IDE için context ve mimari kısıtlama kuralları.",
-    descEn: "Context & architectural constraints for Cursor IDE.",
-    fileTarget: ".cursorrules",
+    name: "Cursor",
+    descTr: "Güncel proje kuralı biçimi (.mdc, alwaysApply). Eski .cursorrules yerine.",
+    descEn: "Current project-rule format (.mdc, alwaysApply), replacing legacy .cursorrules.",
     icon: <Code2 className="w-5 h-5 text-cyan-400" />,
   },
   {
     id: "WINDSURF",
-    name: "Windsurf IDE",
-    descTr: "Cascade yapay zeka asistanı için sistem talimatları.",
-    descEn: "System instructions for Cascade AI assistant in Windsurf.",
-    fileTarget: ".windsurfrules",
+    name: "Windsurf / Devin",
+    descTr: "Cascade için her zaman etkin kural (trigger: always_on). Eski .windsurfrules yerine.",
+    descEn: "Always-on rule for Cascade (trigger: always_on), replacing legacy .windsurfrules.",
     icon: <Wind className="w-5 h-5 text-emerald-400" />,
   },
   {
     id: "CLINE",
-    name: "VS Code + Cline",
-    descTr: "Roo Code / Cline eklentisi için kural yönergeleri.",
-    descEn: "Rules for Cline / Roo Code extensions in VS Code.",
-    fileTarget: ".clinerules",
+    name: "Cline",
+    descTr: "Cline'ın kural klasörü (.clinerules/). Tüm .md dosyalarını birleştirerek okur.",
+    descEn: "Cline's rules folder (.clinerules/); all .md files in it are combined.",
     icon: <Bot className="w-5 h-5 text-purple-400" />,
   },
   {
     id: "GITHUB_COPILOT",
     name: "GitHub Copilot",
-    descTr: "Copilot Chat ve kod tamamlama özel talimatları.",
-    descEn: "Custom instructions for GitHub Copilot Workspace.",
-    fileTarget: ".github/copilot-instructions.md",
+    descTr: "Depo genelindeki Copilot talimatları (sohbet, kod incelemesi, ajan).",
+    descEn: "Repository-wide Copilot instructions (chat, code review, agent).",
     icon: <Cpu className="w-5 h-5 text-sky-400" />,
   },
 ];
@@ -189,7 +197,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
             return (
               <div
                 key={platform.id}
-                {...checkboxCardProps(isSelected, () => togglePlatform(platform.id), `${platform.name} (${platform.fileTarget})`)}
+                {...checkboxCardProps(isSelected, () => togglePlatform(platform.id), `${platform.name} (${PLATFORM_FILES[platform.id]})`)}
                 className={`${FOCUS_RING} relative cursor-pointer p-4 rounded-xl border transition-all duration-200 group flex flex-col justify-between ${
                   isSelected
                     ? "bg-indigo-950/40 border-indigo-500/60 shadow-lg shadow-indigo-950/50 ring-1 ring-indigo-500/30"
@@ -210,7 +218,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
                     <div>
                       <h3 className="text-sm font-semibold text-white">{platform.name}</h3>
                       <span className="inline-block font-mono text-[11px] text-indigo-300 mt-0.5">
-                        {platform.fileTarget}
+                        {PLATFORM_FILES[platform.id]}
                       </span>
                     </div>
                   </div>

@@ -6,6 +6,8 @@ import { TEMPLATE_CHECK_GUIDELINES_PY } from "./templates/checker";
 import { buildAuditPrompt, buildGitignore, buildPreCommitHook, TEMPLATE_GITHUB_CI } from "./templates/misc";
 import { buildIdeRuleFiles } from "./templates/ideRules";
 import { buildMemoryBankFiles } from "./templates/memoryBank";
+import { contentHash } from "./hash";
+import { CONFIG_FORMAT_VERSION, VERSION } from "./version";
 
 /** Values substituted into `{{PLACEHOLDER}}` tokens. */
 export interface TemplateVars {
@@ -112,7 +114,54 @@ export function generateProjectFiles(data: WizardFormData): GeneratedFile[] {
       category: "config",
     });
   }
+  files.push(buildConfigFile(data, files));
   return files;
+}
+
+/** Project config written next to the generated files; read by `vibe-governor update` and the wizard. */
+export const CONFIG_FILE = "vibe-governor.json";
+
+/**
+ * Files owned by the user after creation: never overwritten by `update`
+ * (only created when missing). Everything else is "managed".
+ */
+export function isUserOwnedPath(path: string): boolean {
+  return path.startsWith(".memory_bank/") || path === ".gitignore" || path === CONFIG_FILE;
+}
+
+/** Shape of vibe-governor.json. */
+export interface ProjectConfigFile {
+  $comment: string;
+  formatVersion: number;
+  generator: string;
+  config: WizardFormData;
+  /** path -> content hash of each managed file as last written by the generator. */
+  managedFiles: Record<string, string>;
+}
+
+/** Builds vibe-governor.json from the wizard state and the files generated with it. */
+export function buildConfigFile(
+  data: WizardFormData,
+  files: GeneratedFile[],
+  hashOverrides: Record<string, string> = {}
+): GeneratedFile {
+  const managedFiles: Record<string, string> = {};
+  for (const f of files) if (!isUserOwnedPath(f.path)) managedFiles[f.path] = contentHash(f.content);
+  Object.assign(managedFiles, hashOverrides);
+  const doc: ProjectConfigFile = {
+    $comment: "Vibe Governor project config. Change settings with `npx vibe-governor update` or load this file in the web wizard.",
+    formatVersion: CONFIG_FORMAT_VERSION,
+    generator: `vibe-governor@${VERSION}`,
+    config: data,
+    managedFiles,
+  };
+  return {
+    path: CONFIG_FILE,
+    name: CONFIG_FILE,
+    content: JSON.stringify(doc, null, 2) + "\n",
+    language: "json",
+    category: "config",
+  };
 }
 
 /** npm package spec used by the one-line command (published on npm). */

@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch, type FieldErrors, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2, AlertTriangle, BookOpen, Languages } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2, AlertTriangle, BookOpen, Languages, Upload } from "lucide-react";
 import type { WizardFormData } from "@/types/wizard";
 import { DEFAULT_FORM_DATA, wizardSchema } from "@/lib/schema";
 import { generateProjectFiles } from "@/lib/templateEngine";
@@ -18,6 +18,9 @@ import { errorText } from "./i18n";
 import { useUiLocale } from "./UiLocale";
 import { GuideModal } from "./GuideModal";
 import { Button } from "@/components/ui/button";
+import { parseConfig } from "@/lib/preset";
+import { CONFIG_FILE } from "@/lib/templateEngine";
+import { VERSION } from "@/lib/version";
 
 const INITIAL_DATA: WizardFormData = {
   ...DEFAULT_FORM_DATA,
@@ -49,6 +52,16 @@ const STEP_FIELDS: Record<number, FieldPath<WizardFormData>[]> = {
   5: [],
 };
 
+/** Reads a File as text (FileReader works in every browser, unlike File.text() in older ones). */
+function readFileText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
 /** Collects the i18n error keys of the given field paths. */
 function collectErrors(errors: FieldErrors<WizardFormData>, fields: FieldPath<WizardFormData>[]): string[] {
   const keys: string[] = [];
@@ -69,6 +82,7 @@ export const Wizard: React.FC = () => {
     control,
     setValue,
     trigger,
+    reset,
     formState: { errors },
   } = useForm<WizardFormData>({
     resolver: zodResolver(wizardSchema),
@@ -98,6 +112,36 @@ export const Wizard: React.FC = () => {
 
   const stepErrors = collectErrors(errors, STEP_FIELDS[currentStep] ?? []);
 
+  // Load an existing project's vibe-governor.json into the form.
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(await readFileText(file));
+    } catch {
+      setImportStatus({ ok: false, text: isTr ? `${file.name} geçerli bir JSON dosyası değil.` : `${file.name} is not valid JSON.` });
+      return;
+    }
+    const res = parseConfig(raw, file.name);
+    if (!res.ok) {
+      setImportStatus({ ok: false, text: res.error });
+      return;
+    }
+    outputLocaleTouched.current = true;
+    reset(res.data);
+    setCurrentStep(1);
+    setImportStatus({
+      ok: true,
+      text: isTr
+        ? `${file.name} yüklendi: "${res.data.memoryBank.projectName}" ayarları forma aktarıldı.`
+        : `Loaded ${file.name}: settings of "${res.data.memoryBank.projectName}" are now in the form.`,
+    });
+  };
+
   const goTo = async (target: number) => {
     if (target === currentStep) return;
     if (target > currentStep) {
@@ -115,7 +159,12 @@ export const Wizard: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-end gap-2 mb-6">
+      <div className="flex flex-wrap items-center justify-end gap-2 mb-6">
+        <input ref={fileInput} type="file" accept=".json,application/json" className="hidden" onChange={onImportFile} data-testid="config-input" />
+        <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()} title={CONFIG_FILE}>
+          <Upload className="text-indigo-400" />
+          <span>{isTr ? "Yapılandırma Yükle" : "Load Config"}</span>
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setGuideOpen(true)}>
           <BookOpen className="text-indigo-400" />
           <span>{isTr ? "Rehber" : "Guide"}</span>
@@ -144,10 +193,24 @@ export const Wizard: React.FC = () => {
 
       <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
 
+      {importStatus && (
+        <div
+          role="status"
+          className={`mb-6 flex items-start justify-between gap-3 p-3 rounded-xl border text-sm ${
+            importStatus.ok ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-200" : "bg-rose-950/40 border-rose-800/60 text-rose-200"
+          }`}
+        >
+          <span className="break-words min-w-0">{importStatus.text}</span>
+          <button type="button" onClick={() => setImportStatus(null)} className="text-xs opacity-70 hover:opacity-100 shrink-0">
+            {isTr ? "Kapat" : "Dismiss"}
+          </button>
+        </div>
+      )}
+
       <header className="mb-10 text-center relative">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-700/50 text-indigo-300 text-xs font-semibold mb-4 backdrop-blur shadow-inner">
           <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-          <span>Vibe Governor v1.2 • Master AI Constitution Generator</span>
+          <span>Vibe Governor v{VERSION} • Master AI Constitution Generator</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300">

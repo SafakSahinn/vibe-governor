@@ -8,7 +8,7 @@
 
 1. **Adım 1: Dil ve Target AI Platform Seçimi**
    - Arayüz dili (sağ üst TR/EN) ve üretilen dosyaların dili ayrı ayrı seçilir
-   - Çoklu AI Asistan Desteği: AntiGravity AI Agent (`ANTIGRAVITY.md`), Claude CLI (`CLAUDE.md`), Cursor IDE (`.cursorrules`), Windsurf IDE (`.windsurfrules`), VS Code + Cline (`.clinerules`), GitHub Copilot (`.github/copilot-instructions.md`)
+   - Çoklu AI Asistan Desteği: AGENTS.md standardı, Claude Code, Gemini CLI, Google Antigravity, Cursor, Windsurf/Devin, Cline, GitHub Copilot
    - Diller: C, C++, C#, Java, JavaScript, TypeScript, Python, Go, Rust, Kotlin, Swift, PHP ve HDL (Verilog, VHDL)
 
 2. **Adım 2: Mimari ve Kısıtlar Yapılandırması**
@@ -54,7 +54,22 @@ npx -y vibe-governor init --preset=<sihirbazdan kopyalanan değer>
 npx -y vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
 ```
 
+- `--languages` verilmezse diller projedeki dosyalardan algılanır (`npx vibe-governor detect` ile görebilirsiniz).
 - Mevcut dosyalar korunur (`--force` ile üzerine yazılır), `--dry-run` sadece listeler.
+- Tüm seçimler `vibe-governor.json` dosyasına kaydedilir. Sonradan değiştirmek için:
+  `npx -y vibe-governor update --max-lines=600 --enable=tsNoAny --disable=includeGitHubCI`
+  Elle düzenlenmiş dosyalar korunur (yeni sürüm `<dosya>.vibe-new` olarak yazılır), Memory Bank'e dokunulmaz, seçimden çıkan araçların değiştirilmemiş dosyaları kaldırılır.
+- Sihirbazdaki **Yapılandırma Yükle** düğmesi bir projenin `vibe-governor.json` dosyasını forma geri yükler.
+
+### Mevcut projeler, istisnalar ve Memory Bank uyarısı
+
+- `python3 scripts/check_guidelines.py --update-baseline` mevcut ihlalleri `.vibe-baseline.json`'a alır; sonra yalnızca yeni ihlaller commit'i engeller.
+- Satır içi istisna: `// vibe-ignore: ts_any`, bir alt satır için `vibe-ignore-next-line`, tüm dosya için ilk 10 satırda `vibe-ignore-file: line_limit`. Her bulgunun sonunda kural kimliği yazar.
+- Pre-commit kancası `--staged` ile yalnızca commit'e giren dosyaların hazırlanmış içeriğini denetler; kod değişip `.memory_bank/` güncellenmediyse uyarır.
+
+### Araç dosyaları (güncel resmi biçimler)
+
+AGENTS.md · CLAUDE.md · GEMINI.md · `.agents/rules/` (Antigravity) · `.cursor/rules/*.mdc` · `.windsurf/rules/` · `.clinerules/` · `.github/copilot-instructions.md`
 - Klasörde git deposu varsa `.git/hooks/pre-commit` otomatik kurulur (`--no-hook` ile kapatılır).
 - GitHub sürümü de çalışır: `npx -y github:SafakSahinn/vibe-governor init ...`
 

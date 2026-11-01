@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Wizard } from "@/components/wizard/Wizard";
 import { UiLocaleProvider } from "@/components/wizard/UiLocale";
+import { DEFAULT_FORM_DATA } from "@/lib/schema";
 
 function setup() {
   const user = userEvent.setup();
@@ -60,10 +61,30 @@ describe("Wizard UI", () => {
     expect(await screen.findByText("2. Architecture & Constraint Settings")).toBeInTheDocument();
   });
 
+  it("loads an existing vibe-governor.json into the form", async () => {
+    const { user, setUi } = setup();
+    await setUi("EN");
+    const config = {
+      formatVersion: 1,
+      generator: "vibe-governor@1.3.0",
+      config: { ...DEFAULT_FORM_DATA, locale: "tr", languages: ["VHDL"], memoryBank: { ...DEFAULT_FORM_DATA.memoryBank, projectName: "Imported-HW" } },
+      managedFiles: {},
+    };
+    const input = screen.getByTestId("config-input");
+    await user.upload(input, new File([JSON.stringify(config)], "vibe-governor.json", { type: "application/json" }));
+    expect(await screen.findByText(/Loaded vibe-governor\.json: settings of "Imported-HW"/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "VHDL" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "TypeScript" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /Türkçe \(TR\)/ })).toHaveAttribute("aria-pressed", "true");
+
+    await user.upload(input, new File(["{ not json"], "broken.json", { type: "application/json" }));
+    expect(await screen.findByText("broken.json is not valid JSON.")).toBeInTheDocument();
+  });
+
   it("platform cards are operable from the keyboard", async () => {
     const { user, setUi } = setup();
     await setUi("EN");
-    const card = screen.getByRole("checkbox", { name: "Cursor IDE (.cursorrules)" });
+    const card = screen.getByRole("checkbox", { name: "Cursor (.cursor/rules/vibe-governor.mdc)" });
     expect(card).toHaveAttribute("aria-checked", "true");
     card.focus();
     await user.keyboard(" ");

@@ -45,7 +45,7 @@ if [ -z "$PY" ]; then
     exit 1
 fi
 
-if ! "$PY" scripts/check_guidelines.py; then
+if ! "$PY" scripts/check_guidelines.py --staged; then
     echo "${t.blocked}"
     echo "${t.fix}"
     exit 1
@@ -153,6 +153,7 @@ export function buildGitignore(locale: "tr" | "en"): string {
 ${bar}
 audit-report.md
 *.tmp.md
+*.vibe-new
 scratch/
 /tmp/
 

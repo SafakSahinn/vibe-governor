@@ -15,13 +15,23 @@ Verifies the codebase against AI_GUIDELINES.md:
 4. Language-specific safety rules selected in the wizard:
    {{ENABLED_RULES_DOC}}
 
-Usage: python3 scripts/check_guidelines.py [project_root]
+Usage: python3 scripts/check_guidelines.py [project_root] [--staged] [--update-baseline] [--no-baseline]
+  --staged           only files staged for commit (used by the pre-commit hook); also warns
+                     when code changed but .memory_bank/ was not updated
+  --update-baseline  accept every current finding into .vibe-baseline.json (adopting an
+                     existing project); afterwards only new violations fail
+  --no-baseline      ignore .vibe-baseline.json
+Exceptions: put "vibe-ignore" (optionally ": rule_id, ...") in a comment on the line,
+"vibe-ignore-next-line" on the line above, or "vibe-ignore-file: rule_id" in the first 10 lines.
 Exit code 0 = compliant, 1 = violations found.
 """
 
 import ast
+import hashlib
+import json
 import os
 import re
+import subprocess
 import sys
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -96,6 +106,11 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "warnings": "Uyarılar (commit'i engellemez):",
         "retry": "Lütfen ihlalleri düzelttikten sonra tekrar deneyin.",
         "ok": "TÜM DENETİMLER BAŞARIYLA GEÇTİ! Kod tabanı AI Guidelines kurallarına uygun.",
+        "git_failed": "[UYARI] git çalıştırılamadı; hazırlanmış (staged) dosyalar okunamadı.",
+        "staged_scope": "Commit'e eklenen {0} kod dosyası denetleniyor (--staged).",
+        "mb_stale": "[MEMORY BANK] Kod değişti ama .memory_bank/ güncellenmedi. activeContext.md ve progress.md'yi güncellemeyi unutmayın.",
+        "baseline_written": "{0} mevcut bulgu {1} dosyasına kaydedildi. Bundan sonra yalnızca yeni ihlaller commit'i engeller.",
+        "suppressed": "{0} bulgu vibe-ignore yorumlarıyla, {1} bulgu temel çizgiyle (.vibe-baseline.json) muaf tutuldu.",
     },
     "en": {
         "title": "AI GUIDELINES AUTO-CHECKER STARTING...",
@@ -139,6 +154,11 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "warnings": "Warnings (do not block the commit):",
         "retry": "Please fix the violations above and try again.",
         "ok": "ALL CHECKS PASSED! The codebase complies with the AI Guidelines.",
+        "git_failed": "[WARNING] git could not be run; staged files were not read.",
+        "staged_scope": "Checking {0} staged code file(s) (--staged).",
+        "mb_stale": "[MEMORY BANK] Code changed but .memory_bank/ was not updated. Remember to update activeContext.md and progress.md.",
+        "baseline_written": "Recorded {0} existing finding(s) in {1}. From now on only new violations block commits.",
+        "suppressed": "{0} finding(s) exempted by vibe-ignore comments, {1} by the baseline (.vibe-baseline.json).",
     },
 }
 
@@ -161,10 +181,45 @@ VHDL_PROCESS_RE = re.compile(r"\bprocess\s*\(([^)]*)\)(.*?)\bend\s+process\b", r
 VHDL_IDENT_RE = re.compile(r"[A-Za-z]\w*")
 
 
-def msg(key: str, *args: object) -> str:
-    """Returns a localized message."""
+# Message key -> rule id. The id is printed next to each finding and is what
+# "vibe-ignore: <rule>" comments and the baseline refer to.
+RULE_OF: Dict[str, str] = {
+    "line_limit": "line_limit", "rust_unsafe": "rust_unsafe", "ts_any": "ts_any",
+    "py_hint_arg": "py_type_hints", "py_hint_ret": "py_type_hints", "py_star": "py_no_global",
+    "py_global": "py_no_global", "cpp_new": "cpp_raw_ptr", "cpp_cast": "cpp_raw_ptr", "go_err": "go_errors",
+    "v_seq": "verilog_assign", "v_comb": "verilog_assign", "v_latch": "verilog_latch",
+    "vhdl_lib": "vhdl_numeric_std", "vhdl_sens": "vhdl_sensitivity", "c_unsafe": "c_unsafe_funcs",
+    "c_malloc": "c_malloc_check", "cs_dynamic": "cs_no_dynamic", "cs_async_void": "cs_no_async_void",
+    "java_generic_catch": "java_exceptions", "java_empty_catch": "java_exceptions",
+    "java_sysout": "java_no_sysout", "js_var": "js_no_var", "js_eq": "js_strict_eq", "kt_bang": "kt_no_bang",
+    "kt_globalscope": "kt_no_globalscope", "swift_force": "swift_no_force", "php_strict": "php_strict_types",
+    "php_eval": "php_no_eval", "php_sql": "php_prepared",
+}
+CONFIG_ERROR_KEYS: Set[str] = {"no_guidelines", "no_mb", "mb_missing"}
+
+
+class Finding(str):
+    """A printable message that also remembers its rule id, file and line."""
+
+    rule: str = ""
+    rel: str = ""
+    line: int = 0
+
+
+def msg(key: str, *args: object) -> Finding:
+    """Returns a localized message; rule findings carry rule id, file and line."""
     table = MESSAGES.get(LOCALE, MESSAGES["en"])
-    return table[key].format(*args)
+    text = table[key].format(*args)
+    rule = RULE_OF.get(key, "")
+    finding = Finding(text + (" [" + rule + "]" if rule else ""))
+    finding.rule = rule
+    if rule and args:
+        finding.rel = str(args[0])
+        if key == "php_strict":
+            finding.line = 1
+        elif key != "line_limit" and len(args) > 1 and isinstance(args[1], int):
+            finding.line = args[1]
+    return finding
 
 
 def strip_c_like(line: str, in_block: bool) -> Tuple[str, bool]:
@@ -351,13 +406,53 @@ def check_vhdl_sensitivity(rel: str, lines: List[str], errors: List[str]) -> Non
             errors.append(msg("vhdl_sens", rel, line_no, ", ".join(missing)))
 
 
-def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) -> None:
+IGNORE_RE = re.compile(r"vibe-ignore(-next-line|-file)?(?:\s*:\s*([\w\s,]+))?")
+
+
+def parse_ignores(lines: List[str]) -> Tuple[Set[str], Dict[int, Set[str]]]:
+    """Reads vibe-ignore comments. Returns (file-wide rules, {line: rules}); "*" means every rule."""
+    file_rules: Set[str] = set()
+    line_rules: Dict[int, Set[str]] = {}
+    for idx, raw in enumerate(lines, 1):
+        for m in IGNORE_RE.finditer(raw):
+            names = {n for n in re.split(r"[\s,]+", m.group(2) or "") if n} or {"*"}
+            if m.group(1) == "-file":
+                if idx <= 10:
+                    file_rules |= names
+            else:
+                target = idx + 1 if m.group(1) == "-next-line" else idx
+                line_rules.setdefault(target, set()).update(names)
+    return file_rules, line_rules
+
+
+def is_ignored(f: Finding, file_rules: Set[str], line_rules: Dict[int, Set[str]]) -> bool:
+    """True when a vibe-ignore comment covers this finding."""
+    if not f.rule:
+        return False
+    rules = file_rules | line_rules.get(f.line, set()) if f.line else file_rules
+    return "*" in rules or f.rule in rules
+
+
+def analyze_with_ignores(path: str, rel: str, source: Optional[str], errors: List[str], warnings: List[str]) -> int:
+    """Analyzes one file and drops findings covered by vibe-ignore comments. Returns the ignored count."""
+    if source is None:
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                source = f.read()
+        except OSError:
+            return 0
+    found: List[str] = []
+    found_warn: List[str] = []
+    analyze_file(path, rel, found, found_warn, source)
+    file_rules, line_rules = parse_ignores(source.splitlines())
+    kept = [f for f in found if not (isinstance(f, Finding) and is_ignored(f, file_rules, line_rules))]
+    errors.extend(kept)
+    warnings.extend(w for w in found_warn if not (isinstance(w, Finding) and is_ignored(w, file_rules, line_rules)))
+    return len(found) - len(kept)
+
+
+def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str], source: str) -> None:
     """Runs line-limit and language-specific checks on one source file."""
-    try:
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            source = f.read()
-    except OSError:
-        return
     lines = source.splitlines()
     ext = os.path.splitext(path)[1].lower()
     if len(lines) > MAX_LINES:
@@ -455,27 +550,131 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
         warnings.append(msg("rust_clone", rel, clones))
 
 
+BASELINE_FILE: str = ".vibe-baseline.json"
+SELF_REL: str = "scripts/check_guidelines.py"
+
+
+def git(root: str, *args: str) -> Optional[str]:
+    """Runs a git command in root; returns stdout or None on failure."""
+    try:
+        res = subprocess.run(["git", *args], cwd=root, capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return res.stdout.decode("utf-8", errors="ignore")
+
+
+def is_code_path(rel: str) -> bool:
+    """True for source files that are checked (excluded dirs and this script are skipped)."""
+    parts = rel.split("/")
+    if any(p in EXCLUDE_DIRS for p in parts[:-1]) or rel == SELF_REL:
+        return False
+    return os.path.splitext(rel)[1].lower() in CODE_EXTS
+
+
+def fingerprint(f: Finding, sources: Dict[str, List[str]]) -> str:
+    """Line-number independent identity of a finding (rule + file + trimmed source line)."""
+    lines = sources.get(f.rel, [])
+    text = lines[f.line - 1].strip() if 0 < f.line <= len(lines) else ""
+    return f.rule + "|" + f.rel + "|" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:16]
+
+
+def line_count_of(f: Finding, sources: Dict[str, List[str]]) -> int:
+    return len(sources.get(f.rel, []))
+
+
 def main() -> int:
     """Entry point. Returns the process exit code."""
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    root = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
-    self_path = os.path.abspath(__file__)
+    flags = {a for a in sys.argv[1:] if a.startswith("--")}
+    positional = [a for a in sys.argv[1:] if not a.startswith("--")]
+    root = os.path.abspath(positional[0] if positional else os.getcwd())
+    staged = "--staged" in flags
     print("==================================================")
     print("🔍 " + msg("title"))
     print("==================================================")
 
     errors: List[str] = check_structure(root)
     warnings: List[str] = []
-    for current, dirs, files in os.walk(root):
-        dirs[:] = sorted(d for d in dirs if d not in EXCLUDE_DIRS)
-        for name in sorted(files):
-            full = os.path.join(current, name)
-            if os.path.splitext(name)[1].lower() not in CODE_EXTS or os.path.abspath(full) == self_path:
-                continue
-            rel = os.path.relpath(full, root).replace(os.sep, "/")
-            analyze_file(full, rel, errors, warnings)
+    sources: Dict[str, List[str]] = {}
+    ignored = 0
 
+    if staged:
+        names = git(root, "diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z")
+        if names is None:
+            print(msg("git_failed"))
+            names = ""
+        staged_files = [n for n in names.split("\0") if n]
+        code_files = [n for n in staged_files if is_code_path(n)]
+        print(msg("staged_scope", len(code_files)))
+        for rel in code_files:
+            content = git(root, "show", ":" + rel)
+            if content is None:
+                continue
+            sources[rel] = content.splitlines()
+            ignored += analyze_with_ignores(os.path.join(root, rel), rel, content, errors, warnings)
+        if code_files and not any(n.startswith(".memory_bank/") for n in staged_files):
+            warnings.append(msg("mb_stale"))
+    else:
+        for current, dirs, files in os.walk(root):
+            dirs[:] = sorted(d for d in dirs if d not in EXCLUDE_DIRS)
+            for name in sorted(files):
+                full = os.path.join(current, name)
+                rel = os.path.relpath(full, root).replace(os.sep, "/")
+                if not is_code_path(rel):
+                    continue
+                try:
+                    with open(full, "r", encoding="utf-8", errors="ignore") as fh:
+                        content = fh.read()
+                except OSError:
+                    continue
+                sources[rel] = content.splitlines()
+                ignored += analyze_with_ignores(full, rel, content, errors, warnings)
+
+    rule_findings = [e for e in errors if isinstance(e, Finding) and e.rule]
+    baseline_path = os.path.join(root, BASELINE_FILE)
+
+    if "--update-baseline" in flags:
+        counts: Dict[str, int] = {}
+        limits: Dict[str, int] = {}
+        for f in rule_findings:
+            if f.rule == "line_limit":
+                limits[f.rel] = line_count_of(f, sources)
+            else:
+                key = fingerprint(f, sources)
+                counts[key] = counts.get(key, 0) + 1
+        with open(baseline_path, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump({"version": 1, "findings": counts, "lineLimits": limits}, fh, indent=2, sort_keys=True)
+            fh.write("\n")
+        print("\n📌 " + msg("baseline_written", len(rule_findings), BASELINE_FILE))
+        return 0
+
+    baselined = 0
+    if "--no-baseline" not in flags and os.path.exists(baseline_path):
+        try:
+            with open(baseline_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            known: Dict[str, int] = dict(data.get("findings", {}))
+            known_limits: Dict[str, int] = dict(data.get("lineLimits", {}))
+        except (OSError, ValueError):
+            known, known_limits = {}, {}
+        remaining: List[str] = []
+        for e in errors:
+            if isinstance(e, Finding) and e.rule == "line_limit" and e.rel in known_limits:
+                if line_count_of(e, sources) <= known_limits[e.rel]:
+                    baselined += 1
+                    continue
+            elif isinstance(e, Finding) and e.rule:
+                key = fingerprint(e, sources)
+                if known.get(key, 0) > 0:
+                    known[key] -= 1
+                    baselined += 1
+                    continue
+            remaining.append(e)
+        errors = remaining
+
+    if ignored or baselined:
+        print("\nℹ️ " + msg("suppressed", ignored, baselined))
     if warnings:
         print("\n⚠️ " + msg("warnings"))
         for w in warnings:

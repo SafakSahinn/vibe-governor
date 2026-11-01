@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useUiLocale } from "./UiLocale";
+import { HDL_LANGUAGES, SOFTWARE_LANGUAGES } from "@/lib/schema";
 import { CodingLanguage, TargetPlatform, WizardFormData } from "@/types/wizard";
 import { Bot, Terminal, Code2, Wind, Cpu, Sparkles, Check } from "lucide-react";
 
@@ -20,7 +22,7 @@ const PLATFORMS: {
   {
     id: "ANTIGRAVITY",
     name: "AntiGravity AI Agent",
-    descTr: "Kök dizinde ANTIGRAVITY.md ile otonom kodlama ve hafıza yürütme protocolü.",
+    descTr: "Kök dizinde ANTIGRAVITY.md ile otonom kodlama ve hafıza yürütme protokolü.",
     descEn: "Autonomous protocol with ANTIGRAVITY.md in root.",
     fileTarget: "ANTIGRAVITY.md",
     icon: <Sparkles className="w-5 h-5 text-indigo-400" />,
@@ -67,11 +69,11 @@ const PLATFORMS: {
   },
 ];
 
-const SOFTWARE_LANGS: CodingLanguage[] = ["Rust", "TypeScript", "Python", "C++", "Go"];
-const HARDWARE_LANGS: CodingLanguage[] = ["Verilog", "VHDL"];
+const SOFTWARE_LANGS: readonly CodingLanguage[] = SOFTWARE_LANGUAGES;
+const HARDWARE_LANGS: readonly CodingLanguage[] = HDL_LANGUAGES;
 
 export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
-  const isTr = data.locale === "tr";
+  const { isTr } = useUiLocale();
 
   const togglePlatform = (platform: TargetPlatform) => {
     const exists = data.targetPlatforms.includes(platform);
@@ -103,7 +105,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>{isTr ? "1. Dil ve Target AI Platform Seçimi" : "1. Language & Target AI Platform"}</span>
+            <span>{isTr ? "1. Dil ve Hedef AI Platform Seçimi" : "1. Language & Target AI Platform"}</span>
           </h2>
           <p className="text-sm text-slate-400 mt-1">
             {isTr
@@ -112,8 +114,12 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
           </p>
         </div>
 
-        {/* Locale toggle buttons */}
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-start sm:self-auto">
+        {/* Output locale (language of the generated files) */}
+        <div className="flex flex-col gap-1.5 self-start sm:self-auto">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          {isTr ? "Üretilecek dosyaların dili" : "Language of generated files"}
+        </span>
+        <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
           <button
             type="button"
             onClick={() => updateData({ locale: "tr" })}
@@ -136,6 +142,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
           >
             🇬🇧 English (EN)
           </button>
+        </div>
         </div>
       </div>
 
@@ -241,7 +248,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
               {isTr ? "Donanım Tanımlama Dilleri (HDL)" : "Hardware Description Languages (HDL)"}
             </label>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">
-              Synthesis & Timing
+              {isTr ? "Sentez & Zamanlama" : "Synthesis & Timing"}
             </span>
           </div>
           <div className="flex flex-wrap gap-2.5">

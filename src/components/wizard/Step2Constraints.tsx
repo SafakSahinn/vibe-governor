@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useUiLocale } from "./UiLocale";
 import { ProjectConstraints, WizardFormData } from "@/types/wizard";
 import { AlertTriangle, FileCode2, BookOpenCheck } from "lucide-react";
 import { SafetySwitches } from "./SafetySwitches";
@@ -11,7 +12,7 @@ interface Step2Props {
 }
 
 export const Step2Constraints: React.FC<Step2Props> = ({ data, updateData }) => {
-  const isTr = data.locale === "tr";
+  const { isTr } = useUiLocale();
   const { constraints } = data;
 
   const updateConstraint = <K extends keyof ProjectConstraints>(

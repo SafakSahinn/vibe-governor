@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useUiLocale } from "./UiLocale";
 import { GeneratedFile, WizardFormData } from "@/types/wizard";
 import { generateCliCommand } from "@/lib/templateEngine";
 import { exportProjectZip } from "@/lib/exporter";
@@ -17,7 +18,7 @@ interface Step5Props {
 }
 
 export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
-  const isTr = data.locale === "tr";
+  const { isTr, locale: uiLocale } = useUiLocale();
   const [selectedPath, setSelectedPath] = useState<string | null>(files[0]?.path ?? null);
   const selectedFile = files.find((f) => f.path === selectedPath) ?? files[0] ?? null;
   const [zipError, setZipError] = useState(false);
@@ -188,13 +189,13 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
             files={files}
             selectedFile={selectedFile}
             onSelectFile={(f) => setSelectedPath(f.path)}
-            locale={data.locale}
+            locale={uiLocale}
           />
         </div>
 
         {/* Right Column: Code Viewer */}
         <div className="lg:col-span-8 h-full">
-          <CodeViewer file={selectedFile} locale={data.locale} />
+          <CodeViewer file={selectedFile} locale={uiLocale} />
         </div>
       </div>
     </div>

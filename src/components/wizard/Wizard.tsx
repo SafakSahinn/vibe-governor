@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type FieldErrors, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2, AlertTriangle, BookOpen, Languages } from "lucide-react";
 import type { WizardFormData } from "@/types/wizard";
 import { DEFAULT_FORM_DATA, wizardSchema } from "@/lib/schema";
 import { generateProjectFiles } from "@/lib/templateEngine";
@@ -15,6 +15,8 @@ import { Step3MemoryBank } from "./Step3MemoryBank";
 import { Step4Automation } from "./Step4Automation";
 import { Step5Export } from "./Step5Export";
 import { errorText } from "./i18n";
+import { useUiLocale } from "./UiLocale";
+import { GuideModal } from "./GuideModal";
 
 const INITIAL_DATA: WizardFormData = {
   ...DEFAULT_FORM_DATA,
@@ -74,11 +76,18 @@ export const Wizard: React.FC = () => {
   });
 
   const formData = watch();
-  const isTr = formData.locale === "tr";
+  const { locale: uiLocale, isTr, setLocale: setUiLocale } = useUiLocale();
+  const [guideOpen, setGuideOpen] = useState(false);
+  // The output language follows the interface language until the user picks one in step 1.
+  const outputLocaleTouched = useRef(false);
+  useEffect(() => {
+    if (!outputLocaleTouched.current) setValue("locale", uiLocale);
+  }, [uiLocale, setValue]);
   const formKey = JSON.stringify(formData);
   const generatedFiles = useMemo(() => generateProjectFiles(formData), [formKey]);
 
   const updateFormData = (fields: Partial<WizardFormData>) => {
+    if (fields.locale !== undefined) outputLocaleTouched.current = true;
     (Object.keys(fields) as (keyof WizardFormData)[]).forEach((key) => {
       // setValue's path generics cannot correlate key and value types in a loop.
       setValue(key, fields[key] as never, { shouldValidate: true, shouldDirty: true });
@@ -104,10 +113,43 @@ export const Wizard: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-end gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => setGuideOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition-all"
+        >
+          <BookOpen className="w-4 h-4 text-indigo-400" />
+          <span>{isTr ? "Rehber" : "Guide"}</span>
+        </button>
+        <div
+          className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800"
+          role="group"
+          aria-label={isTr ? "Arayüz dili" : "Interface language"}
+        >
+          <Languages className="w-4 h-4 text-slate-500 mx-1" />
+          {(["tr", "en"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setUiLocale(l)}
+              aria-pressed={uiLocale === l}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                uiLocale === l ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+
       <header className="mb-10 text-center relative">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-700/50 text-indigo-300 text-xs font-semibold mb-4 backdrop-blur shadow-inner">
           <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-          <span>Vibe Governor v1.1 • Master AI Constitution Generator</span>
+          <span>Vibe Governor v1.2 • Master AI Constitution Generator</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300">
@@ -120,14 +162,14 @@ export const Wizard: React.FC = () => {
         </p>
       </header>
 
-      <Stepper currentStep={currentStep} totalSteps={5} onStepClick={goTo} locale={formData.locale} />
+      <Stepper currentStep={currentStep} totalSteps={5} onStepClick={goTo} locale={uiLocale} />
 
       {stepErrors.length > 0 && (
         <div className="mb-6 flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-200 text-sm">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-rose-400" />
           <ul className="space-y-0.5">
             {stepErrors.map((key) => (
-              <li key={key}>{errorText(key, formData.locale)}</li>
+              <li key={key}>{errorText(key, uiLocale)}</li>
             ))}
           </ul>
         </div>
@@ -150,7 +192,7 @@ export const Wizard: React.FC = () => {
                 updateData={updateFormData}
                 projectNameError={
                   errors.memoryBank?.projectName?.message
-                    ? errorText(errors.memoryBank.projectName.message, formData.locale)
+                    ? errorText(errors.memoryBank.projectName.message, uiLocale)
                     : undefined
                 }
               />

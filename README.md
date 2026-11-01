@@ -7,14 +7,14 @@
 ## 🚀 Özellikler & 5 Adımlı Akış
 
 1. **Adım 1: Dil ve Target AI Platform Seçimi**
-   - Dil Desteği: Türkçe (TR) ve İngilizce (EN)
+   - Arayüz dili (sağ üst TR/EN) ve üretilen dosyaların dili ayrı ayrı seçilir
    - Çoklu AI Asistan Desteği: AntiGravity AI Agent (`ANTIGRAVITY.md`), Claude CLI (`CLAUDE.md`), Cursor IDE (`.cursorrules`), Windsurf IDE (`.windsurfrules`), VS Code + Cline (`.clinerules`), GitHub Copilot (`.github/copilot-instructions.md`)
-   - Diller: Rust, TypeScript, Python, C++, Go ve HDL (Verilog, VHDL)
+   - Diller: C, C++, C#, Java, JavaScript, TypeScript, Python, Go, Rust, Kotlin, Swift, PHP ve HDL (Verilog, VHDL)
 
 2. **Adım 2: Mimari ve Kısıtlar Yapılandırması**
    - Ayarlanabilir Dosya Satır Tavanı (Varsayılan 800 satır)
    - Dokümantasyon Kalite Barajı (Varsayılan 8/10)
-   - Dile Özel Güvenlik Anahtarları (Rust no-unsafe/clone, TypeScript no-any, Python type hints, C++ smart pointers, Go error checks, HDL non-blocking atama & latch önleme)
+   - Dile Özel Güvenlik Anahtarları (21 anahtar): C güvensiz fonksiyonlar, C++ ham işaretçi, C# dynamic/async void, Java istisna/loglama, JavaScript var/==, TypeScript any, Python tip ipuçları/global, Go hata kontrolü, Rust unsafe/clone, Kotlin !!/GlobalScope, Swift zorla açma, PHP strict_types/eval, HDL atama & latch
 
 3. **Adım 3: Memory Bank Formu (6 Çekirdek Dosya)**
    - `projectbrief.md`: Proje Vizyonu ve Çekirdek Hedefler
@@ -39,6 +39,10 @@
    - **Tek Satır CLI Komutu Üretimi**
 
 ---
+
+## 📖 Uygulama İçi Rehber
+
+Sağ üstteki **Rehber / Guide** butonu; uygulamanın ne yaptığını, ne işe yaradığını, 5 adımın nasıl çalıştığını, üretilen dosyaları, kurulumu, günlük akışı, denetçi kurallarını ve SSS’yi iki dilde anlatır.
 
 ## ⌨️ CLI (Tek Satır Kurulum)
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useUiLocale } from "./UiLocale";
 import { MemoryBankData, WizardFormData } from "@/types/wizard";
 import { FileText, Sparkles, FolderArchive, Layers, Wrench, Focus, BarChart3 } from "lucide-react";
 
@@ -13,7 +14,7 @@ interface Step3Props {
 type TabKey = keyof Omit<MemoryBankData, "projectName">;
 
 export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projectNameError }) => {
-  const isTr = data.locale === "tr";
+  const { isTr } = useUiLocale();
   const { memoryBank } = data;
   const [activeTab, setActiveTab] = useState<TabKey>("projectBrief");
 
@@ -30,7 +31,7 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projec
   };
 
   const handlePreFill = () => {
-    if (isTr) {
+    if (data.locale === "tr") { // content goes into the files, so follow the output language
       updateData({
         memoryBank: {
           projectName: memoryBank.projectName || "Vibe-Master-App",

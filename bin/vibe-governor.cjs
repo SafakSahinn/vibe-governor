@@ -33,13 +33,25 @@ var path = __toESM(require("node:path"));
 
 // src/lib/rules.ts
 var RULE_DEFS = [
-  { id: "rust_unsafe", language: "Rust", toggle: "rustNoUnsafe", summary: "Rust no-unsafe" },
-  { id: "rust_clone", language: "Rust", toggle: "rustLimitClone", summary: "Rust clone restrictions" },
+  { id: "c_unsafe_funcs", language: "C", toggle: "cBanUnsafeFunctions", summary: "C no gets/strcpy/strcat/sprintf" },
+  { id: "cpp_raw_ptr", language: "C++", toggle: "cppNoRawPointers", summary: "C++ no raw new/delete & reinterpret_cast" },
+  { id: "cs_no_dynamic", language: "C#", toggle: "csNoDynamic", summary: "C# no dynamic" },
+  { id: "cs_no_async_void", language: "C#", toggle: "csNoAsyncVoid", summary: "C# no async void" },
+  { id: "java_exceptions", language: "Java", toggle: "javaExceptionHandling", summary: "Java no empty/generic catch" },
+  { id: "java_no_sysout", language: "Java", toggle: "javaNoSystemOut", summary: "Java logger instead of System.out/printStackTrace" },
+  { id: "js_no_var", language: "JavaScript", toggle: "jsNoVar", summary: "JavaScript no var" },
+  { id: "js_strict_eq", language: "JavaScript", toggle: "jsStrictEquality", summary: "JavaScript strict equality (===)" },
   { id: "ts_any", language: "TypeScript", toggle: "tsNoAny", summary: "TypeScript no-any" },
   { id: "py_type_hints", language: "Python", toggle: "pyTypeHints", summary: "Python type hints" },
   { id: "py_no_global", language: "Python", toggle: "pyNoGlobalState", summary: "Python no global state / wildcard imports" },
-  { id: "cpp_raw_ptr", language: "C++", toggle: "cppNoRawPointers", summary: "C++ no raw new/delete & reinterpret_cast" },
   { id: "go_errors", language: "Go", toggle: "goCheckErrors", summary: "Go explicit error checks" },
+  { id: "rust_unsafe", language: "Rust", toggle: "rustNoUnsafe", summary: "Rust no-unsafe" },
+  { id: "rust_clone", language: "Rust", toggle: "rustLimitClone", summary: "Rust clone restrictions" },
+  { id: "kt_no_bang", language: "Kotlin", toggle: "ktNoForceUnwrap", summary: "Kotlin no !!" },
+  { id: "kt_no_globalscope", language: "Kotlin", toggle: "ktNoGlobalScope", summary: "Kotlin no GlobalScope" },
+  { id: "swift_no_force", language: "Swift", toggle: "swiftNoForceUnwrap", summary: "Swift no force unwrap / try! / as!" },
+  { id: "php_strict_types", language: "PHP", toggle: "phpStrictTypes", summary: "PHP declare(strict_types=1)" },
+  { id: "php_no_eval", language: "PHP", toggle: "phpNoEval", summary: "PHP no eval()" },
   { id: "verilog_assign", language: "Verilog", toggle: "hdlAssignmentRules", summary: "Verilog non-blocking (<=) sequential / blocking (=) combinational" },
   { id: "verilog_latch", language: "Verilog", toggle: "hdlLatchPrevention", summary: "Verilog latch prevention (case default)" },
   { id: "vhdl_numeric_std", language: "VHDL", toggle: "hdlAssignmentRules", summary: "VHDL ieee.numeric_std only" }
@@ -4106,7 +4118,46 @@ var TARGET_PLATFORMS = [
   "CLINE",
   "GITHUB_COPILOT"
 ];
-var CODING_LANGUAGES = ["Rust", "TypeScript", "Python", "C++", "Go", "Verilog", "VHDL"];
+var SOFTWARE_LANGUAGES = [
+  "C",
+  "C++",
+  "C#",
+  "Java",
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "Go",
+  "Rust",
+  "Kotlin",
+  "Swift",
+  "PHP"
+];
+var HDL_LANGUAGES = ["Verilog", "VHDL"];
+var CODING_LANGUAGES = [...SOFTWARE_LANGUAGES, ...HDL_LANGUAGES];
+var SAFETY_SWITCH_KEYS = [
+  "cBanUnsafeFunctions",
+  "cppNoRawPointers",
+  "csNoDynamic",
+  "csNoAsyncVoid",
+  "javaExceptionHandling",
+  "javaNoSystemOut",
+  "jsNoVar",
+  "jsStrictEquality",
+  "tsNoAny",
+  "pyTypeHints",
+  "pyNoGlobalState",
+  "goCheckErrors",
+  "rustNoUnsafe",
+  "rustLimitClone",
+  "ktNoForceUnwrap",
+  "ktNoGlobalScope",
+  "swiftNoForceUnwrap",
+  "phpStrictTypes",
+  "phpNoEval",
+  "hdlAssignmentRules",
+  "hdlLatchPrevention"
+];
+var switchShape = Object.fromEntries(SAFETY_SWITCH_KEYS.map((k) => [k, external_exports.boolean()]));
 var MAX_LINES_MIN = 200;
 var MAX_LINES_MAX = 1500;
 var DOC_SCORE_MIN = 5;
@@ -4120,15 +4171,7 @@ var wizardSchema = external_exports.object({
   constraints: external_exports.object({
     maxLines: external_exports.number({ invalid_type_error: "max_lines_range" }).int("max_lines_range").min(MAX_LINES_MIN, "max_lines_range").max(MAX_LINES_MAX, "max_lines_range"),
     docScoreThreshold: external_exports.number({ invalid_type_error: "doc_score_range" }).int("doc_score_range").min(DOC_SCORE_MIN, "doc_score_range").max(DOC_SCORE_MAX, "doc_score_range"),
-    rustNoUnsafe: external_exports.boolean(),
-    rustLimitClone: external_exports.boolean(),
-    tsNoAny: external_exports.boolean(),
-    pyTypeHints: external_exports.boolean(),
-    pyNoGlobalState: external_exports.boolean(),
-    cppNoRawPointers: external_exports.boolean(),
-    goCheckErrors: external_exports.boolean(),
-    hdlAssignmentRules: external_exports.boolean(),
-    hdlLatchPrevention: external_exports.boolean()
+    ...switchShape
   }),
   memoryBank: external_exports.object({
     projectName: external_exports.string().trim().min(1, "project_name_required").max(80, "project_name_too_long"),
@@ -4163,15 +4206,7 @@ var DEFAULT_FORM_DATA = {
   constraints: {
     maxLines: 800,
     docScoreThreshold: 8,
-    rustNoUnsafe: true,
-    rustLimitClone: true,
-    tsNoAny: true,
-    pyTypeHints: true,
-    pyNoGlobalState: true,
-    cppNoRawPointers: true,
-    goCheckErrors: true,
-    hdlAssignmentRules: true,
-    hdlLatchPrevention: true
+    ...Object.fromEntries(SAFETY_SWITCH_KEYS.map((k) => [k, true]))
   },
   memoryBank: {
     projectName: "my-vibe-project",
@@ -4203,6 +4238,12 @@ function decodePreset(preset) {
     raw = JSON.parse(new TextDecoder().decode(fromBase64Url(preset.trim())));
   } catch {
     return { ok: false, error: "Preset is not valid base64url-encoded JSON." };
+  }
+  if (raw && typeof raw === "object" && "constraints" in raw) {
+    const r = raw;
+    if (r.constraints && typeof r.constraints === "object") {
+      r.constraints = { ...DEFAULT_FORM_DATA.constraints, ...r.constraints };
+    }
   }
   const parsed = wizardSchema.safeParse(raw);
   if (!parsed.success) {
@@ -4313,8 +4354,170 @@ var SOFTWARE_SECTIONS = [
         en: "**Goroutine Leak Prevention:** Mandatory channel closure and `context.Context` management."
       }
     ]
+  },
+  {
+    language: "C",
+    titleTr: "C",
+    titleEn: "C",
+    rules: [
+      {
+        toggle: "cBanUnsafeFunctions",
+        tr: "**G\xFCvensiz Fonksiyon Yasa\u011F\u0131:** Tampon ta\u015Fmas\u0131na a\xE7\u0131k `gets`, `strcpy`, `strcat`, `sprintf`, `vsprintf` kullan\u0131m\u0131 yasakt\u0131r; `fgets`, `strncpy`/`strlcpy`, `snprintf` gibi s\u0131n\u0131r denetimli kar\u015F\u0131l\u0131klar\u0131 kullan\u0131lmal\u0131d\u0131r.",
+        en: "**Unsafe Function Ban:** Overflow-prone `gets`, `strcpy`, `strcat`, `sprintf`, `vsprintf` are forbidden; use bounded alternatives such as `fgets`, `strncpy`/`strlcpy`, `snprintf`."
+      },
+      {
+        tr: "**Bellek Y\xF6netimi:** Her `malloc`/`calloc`/`realloc` d\xF6n\xFC\u015F\xFC `NULL` i\xE7in denetlenmeli; her ay\u0131rman\u0131n tek bir sahibi ve kar\u015F\u0131l\u0131k gelen tek bir `free` \xE7a\u011Fr\u0131s\u0131 olmal\u0131d\u0131r.",
+        en: "**Memory Management:** Check every `malloc`/`calloc`/`realloc` result for `NULL`; every allocation has exactly one owner and one matching `free`."
+      },
+      {
+        tr: "**Ba\u015Fl\u0131k Korumas\u0131:** Her `.h` dosyas\u0131 include guard (`#ifndef/#define`) veya `#pragma once` i\xE7ermeli; dosyalar {{MAX_LINES}} sat\u0131r\u0131 ge\xE7memelidir.",
+        en: "**Header Guards:** Every `.h` file uses an include guard (`#ifndef/#define`) or `#pragma once`; files stay under {{MAX_LINES}} lines."
+      }
+    ]
+  },
+  {
+    language: "C#",
+    titleTr: "C#",
+    titleEn: "C#",
+    rules: [
+      {
+        toggle: "csNoDynamic",
+        tr: "**`dynamic` Yasa\u011F\u0131:** Derleme zaman\u0131 tip g\xFCvenli\u011Fini kald\u0131ran `dynamic` kullan\u0131lmamal\u0131; generic tipler ve aray\xFCzler tercih edilmelidir.",
+        en: "**No `dynamic`:** Do not use `dynamic`, which removes compile-time type safety; prefer generics and interfaces."
+      },
+      {
+        toggle: "csNoAsyncVoid",
+        tr: "**`async void` Yasa\u011F\u0131:** Olay i\u015Fleyiciler (event handler) d\u0131\u015F\u0131nda asenkron metotlar `Task`/`Task<T>` d\xF6nd\xFCrmelidir; aksi halde hatalar yakalanamaz.",
+        en: "**No `async void`:** Except for event handlers, async methods must return `Task`/`Task<T>` so exceptions can be observed."
+      },
+      {
+        tr: "**Nullable ve Kaynak Y\xF6netimi:** Projede `<Nullable>enable</Nullable>` a\xE7\u0131k olmal\u0131; `IDisposable` nesneler `using` ile y\xF6netilmelidir.",
+        en: "**Nullability & Resources:** Enable `<Nullable>enable</Nullable>`; manage `IDisposable` objects with `using`."
+      }
+    ]
+  },
+  {
+    language: "Java",
+    titleTr: "Java",
+    titleEn: "Java",
+    rules: [
+      {
+        toggle: "javaExceptionHandling",
+        tr: "**\u0130stisna Disiplini:** Bo\u015F `catch` bloklar\u0131 ile `Exception`, `RuntimeException`, `Throwable` gibi genel yakalamalar yasakt\u0131r; \xF6zel istisna tipleri yakalanmal\u0131 ve ger\xE7ekten i\u015Flenmelidir.",
+        en: "**Exception Discipline:** Empty `catch` blocks and generic catches of `Exception`, `RuntimeException`, `Throwable` are forbidden; catch specific types and handle them."
+      },
+      {
+        toggle: "javaNoSystemOut",
+        tr: "**Loglama:** `System.out/err.println` ve `printStackTrace()` yerine bir loglama \xE7at\u0131s\u0131 (SLF4J, `java.util.logging`) kullan\u0131lmal\u0131d\u0131r.",
+        en: "**Logging:** Use a logging framework (SLF4J, `java.util.logging`) instead of `System.out/err.println` and `printStackTrace()`."
+      },
+      {
+        tr: "**Paket Yap\u0131s\u0131:** Dosya ba\u015F\u0131na tek public s\u0131n\u0131f ve katmanl\u0131 paket yap\u0131s\u0131 kurulmal\u0131; s\u0131n\u0131flar {{MAX_LINES}} sat\u0131r\u0131 ge\xE7memelidir.",
+        en: "**Package Structure:** One public class per file in a layered package structure; classes stay under {{MAX_LINES}} lines."
+      }
+    ]
+  },
+  {
+    language: "JavaScript",
+    titleTr: "JavaScript",
+    titleEn: "JavaScript",
+    rules: [
+      {
+        toggle: "jsNoVar",
+        tr: "**`var` Yasa\u011F\u0131:** De\u011Fi\u015Fkenler `const` (varsay\u0131lan) veya `let` ile tan\u0131mlanmal\u0131; fonksiyon kapsaml\u0131 ve hoisting'e a\xE7\u0131k `var` kullan\u0131lmaz.",
+        en: "**No `var`:** Declare variables with `const` (default) or `let`; never use function-scoped, hoisted `var`."
+      },
+      {
+        toggle: "jsStrictEquality",
+        tr: "**Kat\u0131 E\u015Fitlik:** Tip d\xF6n\xFC\u015Ft\xFCrmeli `==`/`!=` yerine her zaman `===`/`!==` kullan\u0131lmal\u0131d\u0131r.",
+        en: "**Strict Equality:** Always use `===`/`!==` instead of coercing `==`/`!=`."
+      },
+      {
+        tr: "**Async ve Mod\xFCler Yap\u0131:** `async/await` \xE7a\u011Fr\u0131lar\u0131 `try/catch` ile korunmal\u0131; kod ES mod\xFCllerine b\xF6l\xFCnmeli ve {{MAX_LINES}} sat\u0131r s\u0131n\u0131r\u0131na uyulmal\u0131d\u0131r.",
+        en: "**Async & Modules:** Guard `async/await` with `try/catch`; split code into ES modules within the {{MAX_LINES}}-line limit."
+      }
+    ]
+  },
+  {
+    language: "Kotlin",
+    titleTr: "Kotlin",
+    titleEn: "Kotlin",
+    rules: [
+      {
+        toggle: "ktNoForceUnwrap",
+        tr: "**`!!` Yasa\u011F\u0131:** Null g\xFCvenli\u011Fini delen `!!` operat\xF6r\xFC yerine `?.`, `?:`, `requireNotNull` / `checkNotNull` kullan\u0131lmal\u0131d\u0131r.",
+        en: "**No `!!`:** Replace the null-safety-breaking `!!` operator with `?.`, `?:`, `requireNotNull` / `checkNotNull`."
+      },
+      {
+        toggle: "ktNoGlobalScope",
+        tr: "**Yap\u0131sal E\u015Fzamanl\u0131l\u0131k:** `GlobalScope` yasakt\u0131r; coroutine'ler ya\u015Fam d\xF6ng\xFCs\xFCne ba\u011Fl\u0131 bir `CoroutineScope` (\xF6r. `viewModelScope`) i\xE7inde ba\u015Flat\u0131lmal\u0131d\u0131r.",
+        en: "**Structured Concurrency:** `GlobalScope` is forbidden; launch coroutines in a lifecycle-bound `CoroutineScope` (e.g. `viewModelScope`)."
+      },
+      {
+        tr: "**De\u011Fi\u015Fmezlik:** Varsay\u0131lan olarak `val` ve salt-okunur koleksiyonlar kullan\u0131lmal\u0131d\u0131r.",
+        en: "**Immutability:** Default to `val` and read-only collections."
+      }
+    ]
+  },
+  {
+    language: "Swift",
+    titleTr: "Swift",
+    titleEn: "Swift",
+    rules: [
+      {
+        toggle: "swiftNoForceUnwrap",
+        tr: "**Zorla A\xE7ma Yasa\u011F\u0131:** `!` ile zorla a\xE7ma (force unwrap), `try!` ve `as!` yasakt\u0131r; `if let`, `guard let`, `??` ve `do/catch` kullan\u0131lmal\u0131d\u0131r.",
+        en: "**No Force Unwrapping:** Force unwrap with `!`, `try!` and `as!` are forbidden; use `if let`, `guard let`, `??` and `do/catch`."
+      },
+      {
+        tr: "**Bellek D\xF6ng\xFCleri:** Closure'larda g\xFC\xE7l\xFC referans d\xF6ng\xFCs\xFCn\xFC \xF6nlemek i\xE7in `[weak self]` / `[unowned self]` kullan\u0131lmal\u0131d\u0131r.",
+        en: "**Retain Cycles:** Use `[weak self]` / `[unowned self]` in closures to avoid strong reference cycles."
+      },
+      {
+        tr: "**Protokol Odakl\u0131 Yap\u0131:** B\xFCy\xFCk tipler `extension` ve protokollere b\xF6l\xFCnmeli; dosyalar {{MAX_LINES}} sat\u0131r\u0131 ge\xE7memelidir.",
+        en: "**Protocol-Oriented Design:** Split large types into extensions and protocols; files stay under {{MAX_LINES}} lines."
+      }
+    ]
+  },
+  {
+    language: "PHP",
+    titleTr: "PHP",
+    titleEn: "PHP",
+    rules: [
+      {
+        toggle: "phpStrictTypes",
+        tr: "**Kat\u0131 Tipler:** Her PHP dosyas\u0131 `declare(strict_types=1);` ile ba\u015Flamal\u0131; parametre ve d\xF6n\xFC\u015F tipleri bildirilmelidir.",
+        en: "**Strict Types:** Every PHP file starts with `declare(strict_types=1);` and declares parameter and return types."
+      },
+      {
+        toggle: "phpNoEval",
+        tr: "**`eval` Yasa\u011F\u0131:** Kod enjeksiyonuna yol a\xE7an `eval()` kullan\u0131m\u0131 kesinlikle yasakt\u0131r.",
+        en: "**No `eval`:** `eval()` is strictly forbidden (code injection risk)."
+      },
+      {
+        tr: "**SQL G\xFCvenli\u011Fi ve Standart:** Sorgular yaln\u0131zca haz\u0131rlanm\u0131\u015F ifadelerle (PDO prepared statements) yaz\u0131lmal\u0131; PSR-12 kod standard\u0131na uyulmal\u0131d\u0131r.",
+        en: "**SQL Safety & Style:** Write queries only with prepared statements (PDO); follow the PSR-12 coding standard."
+      }
+    ]
   }
 ];
+var LANGUAGE_ORDER = [
+  "C",
+  "C++",
+  "C#",
+  "Java",
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "Go",
+  "Rust",
+  "Kotlin",
+  "Swift",
+  "PHP",
+  "Verilog",
+  "VHDL"
+];
+SOFTWARE_SECTIONS.sort((a, b) => LANGUAGE_ORDER.indexOf(a.language) - LANGUAGE_ORDER.indexOf(b.language));
 var HDL_SECTIONS = [
   {
     language: "Verilog",
@@ -4478,9 +4681,11 @@ EXCLUDE_DIRS: Set[str] = {
 CODE_EXTS: Set[str] = {
     ".rs", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".c", ".h", ".cpp", ".hpp",
     ".cc", ".cxx", ".hh", ".go", ".v", ".sv", ".svh", ".vhd", ".vhdl", ".java", ".kt",
-    ".cs", ".swift", ".rb", ".php", ".vue", ".svelte",
+    ".kts", ".cs", ".swift", ".rb", ".php", ".vue", ".svelte",
 }
 CPP_EXTS: Set[str] = {".cpp", ".hpp", ".cc", ".cxx", ".hh", ".h"}
+C_EXTS: Set[str] = {".c", ".h"}
+JS_EXTS: Set[str] = {".js", ".jsx", ".mjs", ".cjs"}
 
 MESSAGES: Dict[str, Dict[str, str]] = {
     "tr": {
@@ -4505,6 +4710,19 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "v_comb": "[VERILOG VIOLATION] {0}:{1} -> Kombinasyonel blokta non-blocking (<=) atama; '=' kullanın!",
         "v_latch": "[VERILOG VIOLATION] {0}:{1} -> Kombinasyonel 'case' bloğunda 'default' yok (latch riski)!",
         "vhdl_lib": "[VHDL VIOLATION] {0}:{1} -> Standart dışı kütüphane; 'ieee.numeric_std' kullanın!",
+        "c_unsafe": "[C VIOLATION] {0}:{1} -> Güvensiz fonksiyon (gets/strcpy/strcat/sprintf); sınır denetimli karşılığını kullanın!",
+        "cs_dynamic": "[C# VIOLATION] {0}:{1} -> 'dynamic' kullanımı yasaktır!",
+        "cs_async_void": "[C# VIOLATION] {0}:{1} -> 'async void' yasaktır; Task döndürün!",
+        "java_generic_catch": "[JAVA VIOLATION] {0}:{1} -> Genel istisna yakalama (Exception/Throwable) yasaktır!",
+        "java_empty_catch": "[JAVA VIOLATION] {0}:{1} -> Boş catch bloğu yasaktır!",
+        "java_sysout": "[JAVA VIOLATION] {0}:{1} -> System.out/err veya printStackTrace yerine logger kullanın!",
+        "js_var": "[JAVASCRIPT VIOLATION] {0}:{1} -> 'var' yasaktır; const/let kullanın!",
+        "js_eq": "[JAVASCRIPT VIOLATION] {0}:{1} -> '=='/'!=' yerine '==='/'!==' kullanın!",
+        "kt_bang": "[KOTLIN VIOLATION] {0}:{1} -> '!!' operatörü yasaktır!",
+        "kt_globalscope": "[KOTLIN VIOLATION] {0}:{1} -> 'GlobalScope' yasaktır; yaşam döngüsüne bağlı scope kullanın!",
+        "swift_force": "[SWIFT VIOLATION] {0}:{1} -> Zorla açma (!, try!, as!) yasaktır!",
+        "php_strict": "[PHP VIOLATION] {0}:1 -> 'declare(strict_types=1);' eksik!",
+        "php_eval": "[PHP VIOLATION] {0}:{1} -> 'eval()' kullanımı yasaktır!",
         "fail": "AI GUIDELINES İHLALLERİ TESPİT EDİLDİ:",
         "warnings": "Uyarılar (commit'i engellemez):",
         "retry": "Lütfen ihlalleri düzelttikten sonra tekrar deneyin.",
@@ -4532,6 +4750,19 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "v_comb": "[VERILOG VIOLATION] {0}:{1} -> non-blocking (<=) assignment in combinational block; use '='!",
         "v_latch": "[VERILOG VIOLATION] {0}:{1} -> combinational 'case' without 'default' (latch risk)!",
         "vhdl_lib": "[VHDL VIOLATION] {0}:{1} -> non-standard library; use 'ieee.numeric_std'!",
+        "c_unsafe": "[C VIOLATION] {0}:{1} -> unsafe function (gets/strcpy/strcat/sprintf); use the bounded alternative!",
+        "cs_dynamic": "[C# VIOLATION] {0}:{1} -> 'dynamic' is forbidden!",
+        "cs_async_void": "[C# VIOLATION] {0}:{1} -> 'async void' is forbidden; return Task!",
+        "java_generic_catch": "[JAVA VIOLATION] {0}:{1} -> generic catch (Exception/Throwable) is forbidden!",
+        "java_empty_catch": "[JAVA VIOLATION] {0}:{1} -> empty catch block is forbidden!",
+        "java_sysout": "[JAVA VIOLATION] {0}:{1} -> use a logger instead of System.out/err or printStackTrace!",
+        "js_var": "[JAVASCRIPT VIOLATION] {0}:{1} -> 'var' is forbidden; use const/let!",
+        "js_eq": "[JAVASCRIPT VIOLATION] {0}:{1} -> use '==='/'!==' instead of '=='/'!='!",
+        "kt_bang": "[KOTLIN VIOLATION] {0}:{1} -> the '!!' operator is forbidden!",
+        "kt_globalscope": "[KOTLIN VIOLATION] {0}:{1} -> 'GlobalScope' is forbidden; use a lifecycle-bound scope!",
+        "swift_force": "[SWIFT VIOLATION] {0}:{1} -> force unwrapping (!, try!, as!) is forbidden!",
+        "php_strict": "[PHP VIOLATION] {0}:1 -> missing 'declare(strict_types=1);'!",
+        "php_eval": "[PHP VIOLATION] {0}:{1} -> 'eval()' is forbidden!",
         "fail": "AI GUIDELINES VIOLATIONS DETECTED:",
         "warnings": "Warnings (do not block the commit):",
         "retry": "Please fix the violations above and try again.",
@@ -4547,6 +4778,10 @@ V_ALWAYS_RE = re.compile(r"\balways_ff\s*(@\s*\([^)]*\))?|\balways_comb\b|\balwa
 V_BLOCKING_RE = re.compile(r"^\s*[A-Za-z_][\w.]*(\s*\[[^\]]*\])*\s*=(?!=)")
 V_NONBLOCKING_RE = re.compile(r"^\s*[A-Za-z_][\w.]*(\s*\[[^\]]*\])*\s*<=")
 VHDL_LIB_RE = re.compile(r"\bieee\s*\.\s*std_logic_(unsigned|signed|arith)\b", re.IGNORECASE)
+C_UNSAFE_RE = re.compile(r"\b(gets|strcpy|strcat|sprintf|vsprintf)\s*\(")
+JS_LOOSE_EQ_RE = re.compile(r"(?<![=!<>])==(?!=)|!=(?!=)")
+JAVA_GENERIC_CATCH_RE = re.compile(r"\bcatch\s*\(\s*(final\s+)?(Exception|RuntimeException|Throwable)\s+\w+\s*\)")
+SWIFT_FORCE_RE = re.compile(r"\btry!|\bas!|[\w)\]]!(?!=)")
 
 
 def msg(key: str, *args: object) -> str:
@@ -4715,10 +4950,17 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
                     errors.append(msg("vhdl_lib", rel, idx))
         return
 
+    if ext == ".php" and "php_strict_types" in ENABLED_RULES and "<?php" in source:
+        if not re.search(r"declare\s*\(\s*strict_types\s*=\s*1\s*\)", source):
+            errors.append(msg("php_strict", rel))
+
     in_comment = False
     clones = 0
+    open_catch = 0  # line number of a Java catch whose body has not started yet
     for idx, raw in enumerate(lines, 1):
         code, in_comment = strip_c_like(raw, in_comment)
+        if ext == ".php":
+            code = code.split("#", 1)[0]
         if not code.strip():
             continue
         if ext == ".rs":
@@ -4728,15 +4970,51 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
         elif ext in (".ts", ".tsx"):
             if "ts_any" in ENABLED_RULES and TS_ANY_RE.search(code):
                 errors.append(msg("ts_any", rel, idx))
-        elif ext in CPP_EXTS:
-            if "cpp_raw_ptr" in ENABLED_RULES:
-                if CPP_NEW_RE.search(code) and "std::" not in code and "operator" not in code:
-                    errors.append(msg("cpp_new", rel, idx))
-                if re.search(r"\breinterpret_cast\b", code):
-                    errors.append(msg("cpp_cast", rel, idx))
+        elif ext in JS_EXTS:
+            if "js_no_var" in ENABLED_RULES and re.search(r"\bvar\s+[A-Za-z_$]", code):
+                errors.append(msg("js_var", rel, idx))
+            if "js_strict_eq" in ENABLED_RULES and JS_LOOSE_EQ_RE.search(code):
+                errors.append(msg("js_eq", rel, idx))
         elif ext == ".go":
             if "go_errors" in ENABLED_RULES and GO_IGNORE_RE.search(code) and not re.search(r"\brange\b", code):
                 errors.append(msg("go_err", rel, idx))
+        elif ext == ".cs":
+            if "cs_no_dynamic" in ENABLED_RULES and re.search(r"\bdynamic\b", code):
+                errors.append(msg("cs_dynamic", rel, idx))
+            if "cs_no_async_void" in ENABLED_RULES and re.search(r"\basync\s+void\b", code):
+                errors.append(msg("cs_async_void", rel, idx))
+        elif ext == ".java":
+            if "java_exceptions" in ENABLED_RULES:
+                stripped = code.strip()
+                if open_catch and stripped.startswith("}"):
+                    errors.append(msg("java_empty_catch", rel, open_catch))
+                open_catch = 0
+                if JAVA_GENERIC_CATCH_RE.search(code):
+                    errors.append(msg("java_generic_catch", rel, idx))
+                if re.search(r"\bcatch\s*\([^)]*\)\s*\{\s*\}", code):
+                    errors.append(msg("java_empty_catch", rel, idx))
+                elif re.search(r"\bcatch\s*\([^)]*\)\s*\{\s*$", code):
+                    open_catch = idx
+            if "java_no_sysout" in ENABLED_RULES and re.search(r"\bSystem\s*\.\s*(out|err)\s*\.|\.printStackTrace\s*\(", code):
+                errors.append(msg("java_sysout", rel, idx))
+        elif ext in (".kt", ".kts"):
+            if "kt_no_bang" in ENABLED_RULES and "!!" in code:
+                errors.append(msg("kt_bang", rel, idx))
+            if "kt_no_globalscope" in ENABLED_RULES and re.search(r"\bGlobalScope\b", code):
+                errors.append(msg("kt_globalscope", rel, idx))
+        elif ext == ".swift":
+            if "swift_no_force" in ENABLED_RULES and SWIFT_FORCE_RE.search(code):
+                errors.append(msg("swift_force", rel, idx))
+        elif ext == ".php":
+            if "php_no_eval" in ENABLED_RULES and re.search(r"\beval\s*\(", code):
+                errors.append(msg("php_eval", rel, idx))
+        if ext in C_EXTS and "c_unsafe_funcs" in ENABLED_RULES and C_UNSAFE_RE.search(code):
+            errors.append(msg("c_unsafe", rel, idx))
+        if ext in CPP_EXTS and "cpp_raw_ptr" in ENABLED_RULES:
+            if CPP_NEW_RE.search(code) and "std::" not in code and "operator" not in code:
+                errors.append(msg("cpp_new", rel, idx))
+            if re.search(r"\breinterpret_cast\b", code):
+                errors.append(msg("cpp_cast", rel, idx))
     if "rust_clone" in ENABLED_RULES and clones > CLONE_WARN_PER_FILE:
         warnings.append(msg("rust_clone", rel, clones))
 
@@ -5235,7 +5513,7 @@ function generateProjectFiles(data) {
 }
 
 // cli/index.ts
-var VERSION = "1.1.0";
+var VERSION = "1.2.0";
 var HELP = `vibe-governor ${VERSION}
 
 Usage:

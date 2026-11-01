@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useUiLocale } from "./UiLocale";
 import { AutomationOptions, WizardFormData } from "@/types/wizard";
 import { Terminal, GitBranch, ShieldAlert, Cpu, FileQuestion, Check } from "lucide-react";
 
@@ -10,7 +11,7 @@ interface Step4Props {
 }
 
 export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
-  const isTr = data.locale === "tr";
+  const { isTr } = useUiLocale();
   const { automation } = data;
 
   // The hook and the CI workflow both execute scripts/check_guidelines.py, so they
@@ -43,9 +44,9 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
       titleEn: "Static AI Guidelines Checker",
       targetPath: "scripts/check_guidelines.py",
       descTr:
-        `Tüm kod tabanını tarar; ${data.constraints.maxLines} satır sınırını ve yalnızca seçtiğiniz dillerin kurallarını (Rust unsafe, TS any, Python tip ipuçları, C++ ham new, Go hata kontrolü, Verilog atama/latch, VHDL numeric_std) denetler.`,
+        `Tüm kod tabanını tarar; ${data.constraints.maxLines} satır sınırını, Memory Bank dosyalarını ve seçtiğiniz ${data.languages.length} dilin 2. adımda açık bıraktığınız güvenlik kurallarını denetler.`,
       descEn:
-        `Scans line counts (max ${data.constraints.maxLines}), Memory Bank completeness and only the rules of your selected languages (Rust unsafe, TS any, Python hints, C++ raw new, Go errors, Verilog assignment/latch, VHDL numeric_std).`,
+        `Checks the ${data.constraints.maxLines}-line limit, the Memory Bank files and the step-2 safety rules of your ${data.languages.length} selected language(s).`,
       icon: <Terminal className="w-5 h-5 text-indigo-400" />,
       badge: "Python 3.12+",
     },

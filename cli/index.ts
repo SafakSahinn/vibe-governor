@@ -12,7 +12,7 @@ import type { WizardFormData } from "../src/types/wizard";
  *   npx -y vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
  */
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 
 const HELP = `vibe-governor ${VERSION}
 

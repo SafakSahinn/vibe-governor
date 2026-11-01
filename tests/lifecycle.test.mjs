@@ -206,3 +206,12 @@ test("the installed pre-commit hook blocks a bad commit", pyGit, () => {
   assert.notEqual(c.status, 0);
   assert.match(c.stdout + c.stderr, /COMMIT BLOCKED/);
 });
+
+test("init pre-fills the derivable Memory Bank fields from the settings", () => {
+  const dir = initProject(["--languages=Go,VHDL", "--platforms=CLAUDE_CLI,CURSOR"]);
+  assert.match(read(dir, ".memory_bank/techContext.md"), /Go: `go build \.\/\.\.\.`/);
+  assert.match(read(dir, ".memory_bank/techContext.md"), /AI tools: Claude Code, Cursor/);
+  assert.match(read(dir, ".memory_bank/projectbrief.md"), /Mixed project combining Go software with VHDL hardware design/);
+  assert.match(read(dir, ".memory_bank/systemPatterns.md"), /RTL hierarchy/);
+  assert.match(read(dir, ".memory_bank/progress.md"), /the checker enforces \d+ language rule/);
+});

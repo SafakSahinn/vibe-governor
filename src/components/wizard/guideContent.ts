@@ -81,15 +81,15 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         title: { tr: "Kısıtlar", en: "Constraints" },
         body: {
-          tr: "Dosya satır sınırını, dokümantasyon puan barajını ve dile özel güvenlik anahtarlarını ayarlayın. Yalnızca seçili dillerin açık anahtarları pakete girer.",
-          en: "Set the line limit, the documentation score threshold and the language-specific safety switches. Only enabled switches of selected languages are exported.",
+          tr: "Dosya satır sınırını, dokümantasyon puan barajını ve dile özel güvenlik anahtarlarını ayarlayın. 1. adımda seçtiğiniz dillerin anahtarları otomatik açılır; istemediğinizi kapatabilirsiniz. Yalnızca seçili dillerin açık anahtarları pakete girer.",
+          en: "Set the line limit, the documentation score threshold and the language-specific safety switches. The switches of the languages chosen in step 1 are turned on automatically; switch off any you don't want. Only enabled switches of selected languages are exported.",
         },
       },
       {
         title: { tr: "Memory Bank", en: "Memory Bank" },
         body: {
-          tr: "Projenin vizyonunu, mimarisini, teknolojilerini, mevcut odağını ve ilerlemesini yazın. Bu 6 dosya asistanın kalıcı hafızasıdır.",
-          en: "Describe vision, architecture, tech stack, current focus and progress. These 6 files are the assistant's persistent memory.",
+          tr: "Bu 6 dosya asistanın kalıcı hafızasıdır. Proje özeti, mimari, teknoloji/komutlar, aktif oturum ve ilerleme önceki adımlardaki seçimlerden otomatik doldurulur ve ayarlar değiştikçe güncellenir; elle düzenlediğiniz metin korunur. Ürün bağlamını (çözülen problem) siz yazarsınız.",
+          en: "These 6 files are the assistant's persistent memory. Brief, architecture, tech stack/commands, active context and progress are filled in from your earlier choices and follow them as settings change; text you edit by hand is kept. The product context (the problem being solved) is yours to write.",
         },
       },
       {

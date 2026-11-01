@@ -16,7 +16,7 @@
 2. **Adım 2: Mimari ve Kısıtlar Yapılandırması**
    - Ayarlanabilir Dosya Satır Tavanı (Varsayılan 800 satır)
    - Dokümantasyon Kalite Barajı (Varsayılan 8/10)
-   - Dile Özel Güvenlik Anahtarları (23 anahtar): C güvensiz fonksiyonlar ve malloc NULL kontrolü, C++ ham işaretçi, C# dynamic/async void, Java istisna/loglama, JavaScript var/==, TypeScript any, Python tip ipuçları/global, Go hata kontrolü, Rust unsafe/clone, Kotlin !!/GlobalScope, Swift zorla açma, PHP strict_types/eval/hazırlanmış SQL, HDL atama, latch ve VHDL duyarlılık listesi
+   - Dile Özel Güvenlik Anahtarları (23 anahtar, 1. adımda seçilen dillere göre otomatik açılır): C güvensiz fonksiyonlar ve malloc NULL kontrolü, C++ ham işaretçi, C# dynamic/async void, Java istisna/loglama, JavaScript var/==, TypeScript any, Python tip ipuçları/global, Go hata kontrolü, Rust unsafe/clone, Kotlin !!/GlobalScope, Swift zorla açma, PHP strict_types/eval/hazırlanmış SQL, HDL atama, latch ve VHDL duyarlılık listesi
 
 3. **Adım 3: Memory Bank Formu (6 Çekirdek Dosya)**
    - `projectbrief.md`: Proje Vizyonu ve Çekirdek Hedefler
@@ -25,7 +25,7 @@
    - `techContext.md`: Teknolojiler, Bağımlılıklar, Derleme Komutları
    - `activeContext.md`: Mevcut Odak, Son Yapılanlar, Sıradaki Adımlar
    - `progress.md`: Çalışan Modüller, Tamamlanış Oranı, Teknik Borçlar
-   - Tek tıkla hazır örneklerle doldurma (`Pre-fill`)
+   - Önceki adımlardan çıkarılabilen alanlar (özet, mimari, komutlar, aktif oturum, ilerleme) otomatik doldurulur; elle düzenlenen metin korunur
 
 4. **Adım 4: Otomasyon ve Denetçi Betikleri**
    - `scripts/check_guidelines.py`: Statik kod boyutu ve yasaklı anahtar kelime denetçisi

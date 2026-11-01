@@ -21,19 +21,15 @@ import { Button } from "@/components/ui/button";
 import { parseConfig } from "@/lib/preset";
 import { CONFIG_FILE } from "@/lib/templateEngine";
 import { VERSION } from "@/lib/version";
+import { AUTO_MEMORY_FIELDS, buildAutoMemory, fillEmptyMemory, switchesForLanguages, syncSwitchesToLanguages } from "@/lib/autoFill";
 
-const INITIAL_DATA: WizardFormData = {
+const INITIAL_BASE: WizardFormData = {
   ...DEFAULT_FORM_DATA,
-  memoryBank: {
-    projectName: "Vibe-Master-App",
-    projectBrief: "Büyük ölçekli, yüksek performanslı ve AI destekli modüler kurumsal yazılım platformu.",
-    productContext: "Yapay zeka modellerinin uzun oturumlarda bağlam kaybı yaşamasını engellemek, geliştiriciye tavizsiz mimari rehberlik sunmak.",
-    systemPatterns: "Modüler Crate / Clean Architecture. UI Katmanı, Core Logic ve Data Access birbirinden bağımsızdır.",
-    techContext: "TypeScript, Python, Rust | Sıkı tip denetimi, 800 satır kuralı ve otomatik CI entegrasyonu.",
-    activeContext: "Proje iskeletinin oluşturulması ve Memory Bank anayasa kural dosyasının yürürlüğe sokulması.",
-    progress: "Temel mimari kararlaştırıldı. CI ve yerel pre-commit kancaları aktif hale getirildi.",
-  },
+  // Only the switches of the default languages start enabled.
+  constraints: switchesForLanguages(DEFAULT_FORM_DATA.constraints, DEFAULT_FORM_DATA.languages),
+  memoryBank: { ...DEFAULT_FORM_DATA.memoryBank, projectName: "Vibe-Master-App" },
 };
+const INITIAL_DATA: WizardFormData = { ...INITIAL_BASE, memoryBank: fillEmptyMemory(INITIAL_BASE) };
 
 /** Fields validated before leaving each step. */
 const STEP_FIELDS: Record<number, FieldPath<WizardFormData>[]> = {
@@ -102,8 +98,29 @@ export const Wizard: React.FC = () => {
   const formKey = JSON.stringify(formData);
   const generatedFiles = useMemo(() => generateProjectFiles(JSON.parse(formKey) as WizardFormData), [formKey]);
 
+  // Memory Bank fields derived from the other settings follow them until the user edits them.
+  const autoMemory = useMemo(() => buildAutoMemory(JSON.parse(formKey) as WizardFormData), [formKey]);
+  const autoKey = JSON.stringify(autoMemory);
+  const prevAuto = useRef(buildAutoMemory(INITIAL_DATA));
+  useEffect(() => {
+    const next = JSON.parse(autoKey) as typeof autoMemory;
+    for (const f of AUTO_MEMORY_FIELDS) {
+      const current = formData.memoryBank[f];
+      if (current === prevAuto.current[f] && current !== next[f]) {
+        setValue(`memoryBank.${f}`, next[f], { shouldValidate: true });
+      }
+    }
+    prevAuto.current = next;
+    // formData is read only at the moment the derived texts change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoKey, setValue]);
+
   const updateFormData = (fields: Partial<WizardFormData>) => {
     if (fields.locale !== undefined) outputLocaleTouched.current = true;
+    if (fields.languages !== undefined && fields.constraints === undefined) {
+      // Safety switches follow the language selection.
+      fields = { ...fields, constraints: syncSwitchesToLanguages(formData.constraints, formData.languages, fields.languages) };
+    }
     (Object.keys(fields) as (keyof WizardFormData)[]).forEach((key) => {
       // setValue's path generics cannot correlate key and value types in a loop.
       setValue(key, fields[key] as never, { shouldValidate: true, shouldDirty: true });
@@ -132,7 +149,8 @@ export const Wizard: React.FC = () => {
       return;
     }
     outputLocaleTouched.current = true;
-    reset(res.data);
+    prevAuto.current = buildAutoMemory(res.data);
+    reset({ ...res.data, memoryBank: fillEmptyMemory(res.data) });
     setCurrentStep(1);
     setImportStatus({
       ok: true,
@@ -250,6 +268,7 @@ export const Wizard: React.FC = () => {
             {currentStep === 3 && (
               <Step3MemoryBank
                 data={formData}
+                autoMemory={autoMemory}
                 updateData={updateFormData}
                 projectNameError={
                   errors.memoryBank?.projectName?.message

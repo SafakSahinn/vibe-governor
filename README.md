@@ -10,7 +10,7 @@ Vibe Governor installs one shared rule set for all your AI coding assistants, a 
 keeps project context between sessions, and a **checker** that blocks commits breaking the rules
 (oversized files, `any`, `unsafe`, `gets()`, latches, …).
 
-- **Web wizard:** https://safaksahinn.github.io/vibe-governor/ (pick your settings, preview every file, download a ZIP or copy a one-line command)
+- **Web wizard:** https://safaksahinn.github.io/vibe-governor/ (pick your settings, preview every file, download a ZIP or copy a one-line command). The rules of the languages you pick are switched on automatically, and the Memory Bank fields that follow from your choices (brief, architecture, build commands, status) are pre-written for you to extend.
 - **CLI:** `npx vibe-governor init` (no install, no dependencies, Node.js 18+)
 
 ## Why

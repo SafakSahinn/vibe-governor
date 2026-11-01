@@ -192,55 +192,86 @@ interface Props {
   onToggle: (key: BoolKey, value: boolean) => void;
 }
 
-/** Language-specific safety switches of step 2. Switches for unselected languages are inactive. */
-export const SafetySwitches: React.FC<Props> = ({ data, isTr, onToggle }) => (
-  <div>
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        <ShieldCheck className="w-5 h-5 text-indigo-400" />
-        <h3 className="text-sm font-semibold text-white">
-          {isTr ? "Dile Özel Güvenlik Anahtarları" : "Language-Specific Safety Gates"}
-        </h3>
+/** One switch card. */
+const SwitchCard: React.FC<{ s: SwitchDef; relevant: boolean; checked: boolean; isTr: boolean; onToggle: Props["onToggle"] }> = ({
+  s, relevant, checked, isTr, onToggle,
+}) => (
+  <label
+    className={`p-4 rounded-xl border transition-all cursor-pointer ${
+      relevant ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-60"
+    }`}
+  >
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded border ${s.badgeClass}`}>{s.badge}</span>
+          <span className="text-sm font-semibold text-white"><RichText text={isTr ? s.titleTr : s.titleEn} /></span>
+        </div>
+        <p className="text-xs text-slate-400 mt-2"><RichText text={isTr ? s.descTr : s.descEn} /></p>
       </div>
-      <span className="text-xs text-slate-500">
-        {isTr ? "Yalnızca seçili dillerin kuralları pakete girer" : "Only rules of selected languages are exported"}
-      </span>
+      <Switch
+        checked={checked}
+        onCheckedChange={(v) => onToggle(s.key, v)}
+        aria-label={`${s.badge}: ${isTr ? s.titleTr : s.titleEn}`}
+        className="mt-0.5"
+      />
     </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {SWITCHES.map((s) => {
-        const relevant = s.languages.some((l) => data.languages.includes(l));
-        const checked = data.constraints[s.key];
-        return (
-          <label
-            key={s.key}
-            className={`p-4 rounded-xl border transition-all cursor-pointer ${
-              relevant ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-60"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded border ${s.badgeClass}`}>{s.badge}</span>
-                  <span className="text-sm font-semibold text-white"><RichText text={isTr ? s.titleTr : s.titleEn} /></span>
-                  {!relevant && (
-                    <span className="text-[10px] text-slate-500">
-                      {isTr ? "(dil seçili değil)" : "(language not selected)"}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400 mt-2"><RichText text={isTr ? s.descTr : s.descEn} /></p>
-              </div>
-              <Switch
-                checked={checked}
-                onCheckedChange={(v) => onToggle(s.key, v)}
-                aria-label={`${s.badge}: ${isTr ? s.titleTr : s.titleEn}`}
-                className="mt-0.5"
-              />
-            </div>
-          </label>
-        );
-      })}
-    </div>
-  </div>
+  </label>
 );
+
+/**
+ * Language-specific safety switches of step 2. Switches follow the language
+ * selection of step 1 (selecting a language turns its rules on); the switches
+ * of unselected languages are tucked away because they are not exported.
+ */
+export const SafetySwitches: React.FC<Props> = ({ data, isTr, onToggle }) => {
+  const isRelevant = (s: SwitchDef) => s.languages.some((l) => data.languages.includes(l));
+  const relevant = SWITCHES.filter(isRelevant);
+  const others = SWITCHES.filter((s) => !isRelevant(s));
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-sm font-semibold text-white">
+            {isTr ? "Dile Özel Güvenlik Anahtarları" : "Language-Specific Safety Gates"}
+          </h3>
+        </div>
+        <span className="text-xs text-slate-500">
+          {isTr
+            ? "Seçtiğiniz dillerin kuralları otomatik açıldı; istemediğinizi kapatabilirsiniz"
+            : "Rules of your selected languages are turned on automatically; switch off any you don't want"}
+        </span>
+      </div>
+
+      {relevant.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {relevant.map((s) => (
+            <SwitchCard key={s.key} s={s} relevant checked={data.constraints[s.key]} isTr={isTr} onToggle={onToggle} />
+          ))}
+        </div>
+      ) : (
+        <p className="p-4 rounded-xl border border-slate-800 bg-slate-950/40 text-xs text-slate-400">
+          {isTr
+            ? "Dil seçilmedi; dile özel kural yok. Satır sınırı ve dokümantasyon barajı yine uygulanır."
+            : "No language selected, so there are no language rules. The line limit and documentation threshold still apply."}
+        </p>
+      )}
+
+      {others.length > 0 && (
+        <details className="mt-4 group">
+          <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-300 select-none">
+            {isTr
+              ? `Seçilmemiş dillerin kuralları (${others.length}) — pakete girmez`
+              : `Rules of unselected languages (${others.length}) — not exported`}
+          </summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            {others.map((s) => (
+              <SwitchCard key={s.key} s={s} relevant={false} checked={data.constraints[s.key]} isTr={isTr} onToggle={onToggle} />
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+};

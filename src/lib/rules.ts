@@ -67,6 +67,16 @@ const RULE_DEFS: RuleDef[] = [
   { id: "vhdl_sensitivity", language: "VHDL", toggle: "hdlLatchPrevention", summary: "VHDL complete sensitivity lists" },
 ];
 
+/** Languages each safety switch applies to (HDL switches cover both Verilog and VHDL). */
+export function switchLanguages(): Partial<Record<keyof ProjectConstraints, CodingLanguage[]>> {
+  const map: Partial<Record<keyof ProjectConstraints, CodingLanguage[]>> = {};
+  for (const r of RULE_DEFS) {
+    const list = (map[r.toggle] ??= []);
+    if (!list.includes(r.language)) list.push(r.language);
+  }
+  return map;
+}
+
 /** Returns true when a constraint switch is both enabled and relevant to a selected language. */
 export function isToggleActive(
   data: Pick<WizardFormData, "constraints" | "languages">,

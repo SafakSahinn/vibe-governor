@@ -99,11 +99,66 @@ describe("Wizard UI", () => {
     for (const lang of ["C", "C#", "Java", "JavaScript", "Kotlin", "Swift", "PHP"]) {
       expect(screen.getByRole("button", { name: lang })).toBeInTheDocument();
     }
+    await user.click(screen.getByRole("button", { name: "Java" }));
     await next();
     const sw = await screen.findByRole("switch", { name: "Java: Exception Discipline" });
     expect(sw).toHaveAttribute("aria-checked", "true");
     await user.click(sw);
     expect(sw).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("safety switches follow the language selection", async () => {
+    const { user, setUi, next } = setup();
+    await setUi("EN");
+    // Defaults: TypeScript, Python, Rust are on; Go is not selected.
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    await user.click(screen.getByRole("button", { name: "Rust" }));
+    await next();
+    expect(await screen.findByRole("switch", { name: "Go: Explicit Error Checks" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "TypeScript: No `any` Type" })).toHaveAttribute("aria-checked", "true");
+    const rust = screen.getByRole("switch", { name: "Rust: Ban unsafe Blocks" });
+    expect(rust).toHaveAttribute("aria-checked", "false");
+    expect(rust.closest("details")).not.toBeNull(); // tucked away with the other unselected languages
+
+    // A switch turned off by hand stays off while its language stays selected.
+    await user.click(screen.getByRole("switch", { name: "TypeScript: No `any` Type" }));
+    await user.click(screen.getByRole("button", { name: /Back/ }));
+    await user.click(screen.getByRole("button", { name: "Python" }));
+    await next();
+    expect(await screen.findByRole("switch", { name: "TypeScript: No `any` Type" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("step 3 is pre-filled from earlier choices and keeps hand-edited text", async () => {
+    const { user, setUi, next } = setup();
+    await setUi("EN");
+    await user.click(screen.getByRole("button", { name: "Verilog" }));
+    await next();
+    await next();
+    await user.click(screen.getByRole("button", { name: /Tech Context/ }));
+    const textarea = () => document.querySelector("textarea") as HTMLTextAreaElement;
+    expect(textarea().value).toMatch(/Rust: `cargo build`/);
+    expect(textarea().value).toMatch(/Verilog: `verilator --lint-only -Wall`/);
+    expect(screen.getByText(/Filled in from your earlier choices/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Project Brief/ }));
+    expect(textarea().value).toBe("Mixed project combining TypeScript, Python and Rust software with Verilog hardware design.");
+    await user.type(textarea(), " Custom note.");
+    expect(screen.getByText(/Edited by hand/)).toBeInTheDocument();
+
+    // Changing languages updates untouched fields but keeps the edited one.
+    await user.click(screen.getByRole("button", { name: /Back/ }));
+    await user.click(screen.getByRole("button", { name: /Back/ }));
+    await user.click(screen.getByRole("button", { name: "Python" }));
+    await next();
+    await next();
+    await user.click(screen.getByRole("button", { name: /Project Brief/ }));
+    expect(textarea().value).toMatch(/Custom note\.$/);
+    await user.click(screen.getByRole("button", { name: /Tech Context/ }));
+    expect(textarea().value).not.toMatch(/Python:/);
+
+    // Product context cannot be derived.
+    await user.click(screen.getByRole("button", { name: /Product Context/ }));
+    expect(screen.getByText(/cannot be derived from the settings/)).toBeInTheDocument();
   });
 
   it("hook and CI depend on the checker script in step 4", async () => {

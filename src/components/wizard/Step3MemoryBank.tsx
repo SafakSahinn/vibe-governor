@@ -3,17 +3,19 @@
 import React, { useState } from "react";
 import { useUiLocale } from "./UiLocale";
 import { MemoryBankData, WizardFormData } from "@/types/wizard";
-import { FileText, Sparkles, FolderArchive, Layers, Wrench, Focus, BarChart3 } from "lucide-react";
+import { AUTO_MEMORY_FIELDS, type AutoMemory, type AutoMemoryField } from "@/lib/autoFill";
+import { FileText, Sparkles, RotateCcw, FolderArchive, Layers, Wrench, Focus, BarChart3 } from "lucide-react";
 
 interface Step3Props {
   data: WizardFormData;
+  autoMemory: AutoMemory;
   updateData: (fields: Partial<WizardFormData>) => void;
   projectNameError?: string;
 }
 
 type TabKey = keyof Omit<MemoryBankData, "projectName">;
 
-export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projectNameError }) => {
+export const Step3MemoryBank: React.FC<Step3Props> = ({ data, autoMemory, updateData, projectNameError }) => {
   const { isTr } = useUiLocale();
   const { memoryBank } = data;
   const [activeTab, setActiveTab] = useState<TabKey>("projectBrief");
@@ -30,32 +32,13 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projec
     });
   };
 
-  const handlePreFill = () => {
-    if (data.locale === "tr") { // content goes into the files, so follow the output language
-      updateData({
-        memoryBank: {
-          projectName: memoryBank.projectName || "Vibe-Master-App",
-          projectBrief: "Büyük ölçekli, yüksek performanslı ve AI destekli modüler kurumsal yazılım platformu.",
-          productContext: "Yapay zeka modellerinin uzun oturumlarda bağlam kaybı yaşamasını engellemek, geliştiriciye tavizsiz mimari rehberlik sunmak.",
-          systemPatterns: "Modüler Crate / Clean Architecture. UI Katmanı, Core Logic ve Data Access birbirinden bağımsızdır.",
-          techContext: `${data.languages.join(", ") || "Dil seçilmedi"} | Sıkı tip denetimi, ${data.constraints.maxLines} satır kuralı ve otomatik CI entegrasyonu.`,
-          activeContext: "Proje iskeletinin oluşturulması ve Memory Bank anayasa kural dosyasının yürürlüğe sokulması.",
-          progress: "Temel mimari kararlaştırıldı. CI ve yerel pre-commit kancaları aktif hale getirildi.",
-        },
-      });
-    } else {
-      updateData({
-        memoryBank: {
-          projectName: memoryBank.projectName || "Vibe-Master-App",
-          projectBrief: "Large-scale, high-performance, and AI-governed modular enterprise application platform.",
-          productContext: "Prevent AI context drift across multiple developer sessions, providing zero-compromise architectural guardrails.",
-          systemPatterns: "Modular Clean Architecture. Decoupled UI Layer, Core Logic, and Storage Adapters.",
-          techContext: `${data.languages.join(", ") || "No language selected"} | Strict static typing, ${data.constraints.maxLines}-line ceiling, automated CI pipeline.`,
-          activeContext: "Scaffolding repository foundations and loading initial Memory Bank guidelines.",
-          progress: "Core patterns finalized. Local pre-commit guard and CI verification active.",
-        },
-      });
-    }
+  const isAutoField = (key: TabKey): key is AutoMemoryField => (AUTO_MEMORY_FIELDS as readonly string[]).includes(key);
+
+  /** Rewrites every derivable field from the current settings. */
+  const handleAutoFill = () => {
+    const next = { ...memoryBank };
+    for (const f of AUTO_MEMORY_FIELDS) next[f] = autoMemory[f];
+    updateData({ memoryBank: next });
   };
 
   const tabs: {
@@ -135,18 +118,18 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projec
           </h2>
           <p className="text-sm text-slate-400 mt-1">
             {isTr
-              ? "Yapay zekanın hafızasını oluşturan `.memory_bank/` altındaki 6 temel dosyayı yapılandırın."
-              : "Configure the 6 core files in `.memory_bank/` that maintain persistent AI memory across sessions."}
+              ? "Önceki adımlardan çıkarılabilen alanlar otomatik dolduruldu; dilediğiniz alanı elle düzenleyip ekleme yapabilirsiniz."
+              : "Fields that follow from the previous steps are filled in automatically; edit or extend any of them by hand."}
           </p>
         </div>
 
         <button
           type="button"
-          onClick={handlePreFill}
+          onClick={handleAutoFill}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 text-xs font-semibold transition-all self-start sm:self-auto shadow-sm"
         >
           <Sparkles className="w-4 h-4" />
-          <span>{isTr ? "Örnek Verilerle Doldur" : "Pre-fill Defaults"}</span>
+          <span>{isTr ? "Ayarlardan Yeniden Doldur" : "Refill from Settings"}</span>
         </button>
       </div>
 
@@ -216,6 +199,13 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projec
             </span>
           </div>
 
+          <AutoStatus
+            isTr={isTr}
+            auto={isAutoField(activeTab) ? autoMemory[activeTab] : null}
+            value={memoryBank[activeTab]}
+            onRestore={() => isAutoField(activeTab) && updateMemoryBank(activeTab, autoMemory[activeTab])}
+          />
+
           <textarea
             rows={7}
             value={memoryBank[activeTab]}
@@ -226,5 +216,45 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projec
         </div>
       </div>
     </div>
+  );
+};
+
+interface AutoStatusProps {
+  isTr: boolean;
+  /** Derived text for this field, or null when the field cannot be derived. */
+  auto: string | null;
+  value: string;
+  onRestore: () => void;
+}
+
+/** Tells whether the active field holds the derived text, was edited, or must be written by hand. */
+const AutoStatus: React.FC<AutoStatusProps> = ({ isTr, auto, value, onRestore }) => {
+  if (auto === null || auto === "") {
+    return (
+      <p className="text-xs text-slate-500">
+        {isTr
+          ? "Bu alan projenize özgü olduğu için ayarlardan çıkarılamaz; kendiniz yazın."
+          : "This field is specific to your project and cannot be derived from the settings; write it yourself."}
+      </p>
+    );
+  }
+  if (value === auto) {
+    return (
+      <p className="text-xs text-emerald-400 flex items-center gap-1.5">
+        <Sparkles className="w-3.5 h-3.5" />
+        {isTr
+          ? "Önceki adımlardaki seçimlerden otomatik dolduruldu; ayarlar değişince güncellenir. Düzenlerseniz metniniz korunur."
+          : "Filled in from your earlier choices and kept in sync with them. Once you edit it, your text is kept."}
+      </p>
+    );
+  }
+  return (
+    <p className="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
+      <span>{isTr ? "Elle düzenlendi; ayarlar değişse de korunur." : "Edited by hand; kept even if the settings change."}</span>
+      <button type="button" onClick={onRestore} className="inline-flex items-center gap-1 text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline">
+        <RotateCcw className="w-3 h-3" />
+        {isTr ? "Otomatik metne dön" : "Restore automatic text"}
+      </button>
+    </p>
   );
 };

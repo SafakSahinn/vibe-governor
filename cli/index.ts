@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { CONFIG_FILE, buildConfigFile, generateProjectFiles, isUserOwnedPath, type ProjectConfigFile } from "../src/lib/templateEngine";
 import { decodePreset, parseConfig } from "../src/lib/preset";
+import { fillEmptyMemory } from "../src/lib/autoFill";
 import { CODING_LANGUAGES, DEFAULT_FORM_DATA, SAFETY_SWITCH_KEYS, wizardSchema } from "../src/lib/schema";
 import { contentHash } from "../src/lib/hash";
 import { LEGACY_RULE_FILES } from "../src/lib/templates/ideRules";
@@ -241,6 +242,7 @@ function init(flags: Flags): void {
     data = res.data;
   } else {
     data = applySettingFlags(DEFAULT_FORM_DATA, flags, root, true);
+    data = { ...data, memoryBank: fillEmptyMemory(data) };
   }
   const ctx: WriteContext = { root, tr: data.locale === "tr", dryRun: flags.has("dry-run"), force: flags.has("force") };
   const { tr } = ctx;

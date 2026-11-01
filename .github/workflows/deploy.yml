@@ -33,6 +33,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify generated pack (CLI + checker tests)
+        run: npm test
+
+      - name: Ensure committed CLI bundle is up to date
+        run: git diff --exit-code -- bin/
+
       - name: Build with Next.js
         env:
           GITHUB_ACTIONS: "true"

@@ -40,6 +40,36 @@
 
 ---
 
+## ⌨️ CLI (Tek Satır Kurulum)
+
+Sihirbazın 5. adımındaki komut, tüm seçimleri `--preset` ile taşır ve aynı dosyaları doğrudan proje klasörüne yazar (Node.js 18+):
+
+```bash
+npx -y github:SafakSahinn/vibe-governor init --preset=<sihirbazdan kopyalanan değer>
+# veya preset olmadan:
+npx -y github:SafakSahinn/vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
+```
+
+- Mevcut dosyalar korunur (`--force` ile üzerine yazılır), `--dry-run` sadece listeler.
+- Klasörde git deposu varsa `.git/hooks/pre-commit` otomatik kurulur (`--no-hook` ile kapatılır).
+- Paket npm'e yayınlanırsa komut `npx vibe-governor init --preset=...` olarak kısalır.
+
+## 🧱 Mimari
+
+- `src/lib/schema.ts` — Zod şeması (React Hook Form doğrulaması + CLI preset doğrulaması)
+- `src/lib/rules.ts` — seçili dil × güvenlik anahtarı → aktif kural listesi
+- `src/lib/templates/` — `AI_GUIDELINES.md`, IDE kural dosyaları, Memory Bank, `check_guidelines.py`, kanca/CI/denetim/.gitignore şablonları
+- `src/lib/templateEngine.ts` — `{{PLACEHOLDER}}` motoru ve dosya üretimi
+- `cli/index.ts` → `bin/vibe-governor.cjs` (esbuild ile tek dosya, bağımlılıksız)
+
+## 🧪 Test
+
+```bash
+npm test   # CLI'yı derler, paket üretir, Python denetçisini iyi/kötü örnek kodlarla çalıştırır
+```
+
+`cli/` veya `src/lib/` değiştiğinde `npm run build:cli` ile `bin/vibe-governor.cjs` yeniden üretilip commit'lenmelidir (npx GitHub'dan bu dosyayı çalıştırır).
+
 ## 💻 Çalıştırma Talimatları
 
 Geliştirme sunucusunu başlatmak için:

@@ -120,7 +120,158 @@ const SOFTWARE_SECTIONS: Section[] = [
       },
     ],
   },
+  {
+    language: "C",
+    titleTr: "C",
+    titleEn: "C",
+    rules: [
+      {
+        toggle: "cBanUnsafeFunctions",
+        tr: "**Güvensiz Fonksiyon Yasağı:** Tampon taşmasına açık `gets`, `strcpy`, `strcat`, `sprintf`, `vsprintf` kullanımı yasaktır; `fgets`, `strncpy`/`strlcpy`, `snprintf` gibi sınır denetimli karşılıkları kullanılmalıdır.",
+        en: "**Unsafe Function Ban:** Overflow-prone `gets`, `strcpy`, `strcat`, `sprintf`, `vsprintf` are forbidden; use bounded alternatives such as `fgets`, `strncpy`/`strlcpy`, `snprintf`.",
+      },
+      {
+        tr: "**Bellek Yönetimi:** Her `malloc`/`calloc`/`realloc` dönüşü `NULL` için denetlenmeli; her ayırmanın tek bir sahibi ve karşılık gelen tek bir `free` çağrısı olmalıdır.",
+        en: "**Memory Management:** Check every `malloc`/`calloc`/`realloc` result for `NULL`; every allocation has exactly one owner and one matching `free`.",
+      },
+      {
+        tr: "**Başlık Koruması:** Her `.h` dosyası include guard (`#ifndef/#define`) veya `#pragma once` içermeli; dosyalar {{MAX_LINES}} satırı geçmemelidir.",
+        en: "**Header Guards:** Every `.h` file uses an include guard (`#ifndef/#define`) or `#pragma once`; files stay under {{MAX_LINES}} lines.",
+      },
+    ],
+  },
+  {
+    language: "C#",
+    titleTr: "C#",
+    titleEn: "C#",
+    rules: [
+      {
+        toggle: "csNoDynamic",
+        tr: "**`dynamic` Yasağı:** Derleme zamanı tip güvenliğini kaldıran `dynamic` kullanılmamalı; generic tipler ve arayüzler tercih edilmelidir.",
+        en: "**No `dynamic`:** Do not use `dynamic`, which removes compile-time type safety; prefer generics and interfaces.",
+      },
+      {
+        toggle: "csNoAsyncVoid",
+        tr: "**`async void` Yasağı:** Olay işleyiciler (event handler) dışında asenkron metotlar `Task`/`Task<T>` döndürmelidir; aksi halde hatalar yakalanamaz.",
+        en: "**No `async void`:** Except for event handlers, async methods must return `Task`/`Task<T>` so exceptions can be observed.",
+      },
+      {
+        tr: "**Nullable ve Kaynak Yönetimi:** Projede `<Nullable>enable</Nullable>` açık olmalı; `IDisposable` nesneler `using` ile yönetilmelidir.",
+        en: "**Nullability & Resources:** Enable `<Nullable>enable</Nullable>`; manage `IDisposable` objects with `using`.",
+      },
+    ],
+  },
+  {
+    language: "Java",
+    titleTr: "Java",
+    titleEn: "Java",
+    rules: [
+      {
+        toggle: "javaExceptionHandling",
+        tr: "**İstisna Disiplini:** Boş `catch` blokları ile `Exception`, `RuntimeException`, `Throwable` gibi genel yakalamalar yasaktır; özel istisna tipleri yakalanmalı ve gerçekten işlenmelidir.",
+        en: "**Exception Discipline:** Empty `catch` blocks and generic catches of `Exception`, `RuntimeException`, `Throwable` are forbidden; catch specific types and handle them.",
+      },
+      {
+        toggle: "javaNoSystemOut",
+        tr: "**Loglama:** `System.out/err.println` ve `printStackTrace()` yerine bir loglama çatısı (SLF4J, `java.util.logging`) kullanılmalıdır.",
+        en: "**Logging:** Use a logging framework (SLF4J, `java.util.logging`) instead of `System.out/err.println` and `printStackTrace()`.",
+      },
+      {
+        tr: "**Paket Yapısı:** Dosya başına tek public sınıf ve katmanlı paket yapısı kurulmalı; sınıflar {{MAX_LINES}} satırı geçmemelidir.",
+        en: "**Package Structure:** One public class per file in a layered package structure; classes stay under {{MAX_LINES}} lines.",
+      },
+    ],
+  },
+  {
+    language: "JavaScript",
+    titleTr: "JavaScript",
+    titleEn: "JavaScript",
+    rules: [
+      {
+        toggle: "jsNoVar",
+        tr: "**`var` Yasağı:** Değişkenler `const` (varsayılan) veya `let` ile tanımlanmalı; fonksiyon kapsamlı ve hoisting'e açık `var` kullanılmaz.",
+        en: "**No `var`:** Declare variables with `const` (default) or `let`; never use function-scoped, hoisted `var`.",
+      },
+      {
+        toggle: "jsStrictEquality",
+        tr: "**Katı Eşitlik:** Tip dönüştürmeli `==`/`!=` yerine her zaman `===`/`!==` kullanılmalıdır.",
+        en: "**Strict Equality:** Always use `===`/`!==` instead of coercing `==`/`!=`.",
+      },
+      {
+        tr: "**Async ve Modüler Yapı:** `async/await` çağrıları `try/catch` ile korunmalı; kod ES modüllerine bölünmeli ve {{MAX_LINES}} satır sınırına uyulmalıdır.",
+        en: "**Async & Modules:** Guard `async/await` with `try/catch`; split code into ES modules within the {{MAX_LINES}}-line limit.",
+      },
+    ],
+  },
+  {
+    language: "Kotlin",
+    titleTr: "Kotlin",
+    titleEn: "Kotlin",
+    rules: [
+      {
+        toggle: "ktNoForceUnwrap",
+        tr: "**`!!` Yasağı:** Null güvenliğini delen `!!` operatörü yerine `?.`, `?:`, `requireNotNull` / `checkNotNull` kullanılmalıdır.",
+        en: "**No `!!`:** Replace the null-safety-breaking `!!` operator with `?.`, `?:`, `requireNotNull` / `checkNotNull`.",
+      },
+      {
+        toggle: "ktNoGlobalScope",
+        tr: "**Yapısal Eşzamanlılık:** `GlobalScope` yasaktır; coroutine'ler yaşam döngüsüne bağlı bir `CoroutineScope` (ör. `viewModelScope`) içinde başlatılmalıdır.",
+        en: "**Structured Concurrency:** `GlobalScope` is forbidden; launch coroutines in a lifecycle-bound `CoroutineScope` (e.g. `viewModelScope`).",
+      },
+      {
+        tr: "**Değişmezlik:** Varsayılan olarak `val` ve salt-okunur koleksiyonlar kullanılmalıdır.",
+        en: "**Immutability:** Default to `val` and read-only collections.",
+      },
+    ],
+  },
+  {
+    language: "Swift",
+    titleTr: "Swift",
+    titleEn: "Swift",
+    rules: [
+      {
+        toggle: "swiftNoForceUnwrap",
+        tr: "**Zorla Açma Yasağı:** `!` ile zorla açma (force unwrap), `try!` ve `as!` yasaktır; `if let`, `guard let`, `??` ve `do/catch` kullanılmalıdır.",
+        en: "**No Force Unwrapping:** Force unwrap with `!`, `try!` and `as!` are forbidden; use `if let`, `guard let`, `??` and `do/catch`.",
+      },
+      {
+        tr: "**Bellek Döngüleri:** Closure'larda güçlü referans döngüsünü önlemek için `[weak self]` / `[unowned self]` kullanılmalıdır.",
+        en: "**Retain Cycles:** Use `[weak self]` / `[unowned self]` in closures to avoid strong reference cycles.",
+      },
+      {
+        tr: "**Protokol Odaklı Yapı:** Büyük tipler `extension` ve protokollere bölünmeli; dosyalar {{MAX_LINES}} satırı geçmemelidir.",
+        en: "**Protocol-Oriented Design:** Split large types into extensions and protocols; files stay under {{MAX_LINES}} lines.",
+      },
+    ],
+  },
+  {
+    language: "PHP",
+    titleTr: "PHP",
+    titleEn: "PHP",
+    rules: [
+      {
+        toggle: "phpStrictTypes",
+        tr: "**Katı Tipler:** Her PHP dosyası `declare(strict_types=1);` ile başlamalı; parametre ve dönüş tipleri bildirilmelidir.",
+        en: "**Strict Types:** Every PHP file starts with `declare(strict_types=1);` and declares parameter and return types.",
+      },
+      {
+        toggle: "phpNoEval",
+        tr: "**`eval` Yasağı:** Kod enjeksiyonuna yol açan `eval()` kullanımı kesinlikle yasaktır.",
+        en: "**No `eval`:** `eval()` is strictly forbidden (code injection risk).",
+      },
+      {
+        tr: "**SQL Güvenliği ve Standart:** Sorgular yalnızca hazırlanmış ifadelerle (PDO prepared statements) yazılmalı; PSR-12 kod standardına uyulmalıdır.",
+        en: "**SQL Safety & Style:** Write queries only with prepared statements (PDO); follow the PSR-12 coding standard.",
+      },
+    ],
+  },
 ];
+
+/** Display order of sections follows the language order of step 1. */
+const LANGUAGE_ORDER: CodingLanguage[] = [
+  "C", "C++", "C#", "Java", "JavaScript", "TypeScript", "Python", "Go", "Rust", "Kotlin", "Swift", "PHP", "Verilog", "VHDL",
+];
+SOFTWARE_SECTIONS.sort((a, b) => LANGUAGE_ORDER.indexOf(a.language) - LANGUAGE_ORDER.indexOf(b.language));
 
 const HDL_SECTIONS: Section[] = [
   {

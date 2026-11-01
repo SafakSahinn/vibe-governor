@@ -1,5 +1,5 @@
 import type { WizardFormData } from "../types/wizard";
-import { wizardSchema } from "./schema";
+import { DEFAULT_FORM_DATA, wizardSchema } from "./schema";
 
 /**
  * `--preset` payload codec shared by the web wizard (encode) and the CLI (decode).
@@ -32,6 +32,13 @@ export function decodePreset(preset: string): PresetResult {
     raw = JSON.parse(new TextDecoder().decode(fromBase64Url(preset.trim())));
   } catch {
     return { ok: false, error: "Preset is not valid base64url-encoded JSON." };
+  }
+  // Presets created before newer switches existed lack those keys: fill them with defaults.
+  if (raw && typeof raw === "object" && "constraints" in raw) {
+    const r = raw as { constraints: unknown };
+    if (r.constraints && typeof r.constraints === "object") {
+      r.constraints = { ...DEFAULT_FORM_DATA.constraints, ...(r.constraints as object) };
+    }
   }
   const parsed = wizardSchema.safeParse(raw);
   if (!parsed.success) {

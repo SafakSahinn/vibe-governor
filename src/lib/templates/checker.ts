@@ -47,9 +47,11 @@ EXCLUDE_DIRS: Set[str] = {
 CODE_EXTS: Set[str] = {
     ".rs", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".c", ".h", ".cpp", ".hpp",
     ".cc", ".cxx", ".hh", ".go", ".v", ".sv", ".svh", ".vhd", ".vhdl", ".java", ".kt",
-    ".cs", ".swift", ".rb", ".php", ".vue", ".svelte",
+    ".kts", ".cs", ".swift", ".rb", ".php", ".vue", ".svelte",
 }
 CPP_EXTS: Set[str] = {".cpp", ".hpp", ".cc", ".cxx", ".hh", ".h"}
+C_EXTS: Set[str] = {".c", ".h"}
+JS_EXTS: Set[str] = {".js", ".jsx", ".mjs", ".cjs"}
 
 MESSAGES: Dict[str, Dict[str, str]] = {
     "tr": {
@@ -74,6 +76,19 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "v_comb": "[VERILOG VIOLATION] {0}:{1} -> Kombinasyonel blokta non-blocking (<=) atama; '=' kullanın!",
         "v_latch": "[VERILOG VIOLATION] {0}:{1} -> Kombinasyonel 'case' bloğunda 'default' yok (latch riski)!",
         "vhdl_lib": "[VHDL VIOLATION] {0}:{1} -> Standart dışı kütüphane; 'ieee.numeric_std' kullanın!",
+        "c_unsafe": "[C VIOLATION] {0}:{1} -> Güvensiz fonksiyon (gets/strcpy/strcat/sprintf); sınır denetimli karşılığını kullanın!",
+        "cs_dynamic": "[C# VIOLATION] {0}:{1} -> 'dynamic' kullanımı yasaktır!",
+        "cs_async_void": "[C# VIOLATION] {0}:{1} -> 'async void' yasaktır; Task döndürün!",
+        "java_generic_catch": "[JAVA VIOLATION] {0}:{1} -> Genel istisna yakalama (Exception/Throwable) yasaktır!",
+        "java_empty_catch": "[JAVA VIOLATION] {0}:{1} -> Boş catch bloğu yasaktır!",
+        "java_sysout": "[JAVA VIOLATION] {0}:{1} -> System.out/err veya printStackTrace yerine logger kullanın!",
+        "js_var": "[JAVASCRIPT VIOLATION] {0}:{1} -> 'var' yasaktır; const/let kullanın!",
+        "js_eq": "[JAVASCRIPT VIOLATION] {0}:{1} -> '=='/'!=' yerine '==='/'!==' kullanın!",
+        "kt_bang": "[KOTLIN VIOLATION] {0}:{1} -> '!!' operatörü yasaktır!",
+        "kt_globalscope": "[KOTLIN VIOLATION] {0}:{1} -> 'GlobalScope' yasaktır; yaşam döngüsüne bağlı scope kullanın!",
+        "swift_force": "[SWIFT VIOLATION] {0}:{1} -> Zorla açma (!, try!, as!) yasaktır!",
+        "php_strict": "[PHP VIOLATION] {0}:1 -> 'declare(strict_types=1);' eksik!",
+        "php_eval": "[PHP VIOLATION] {0}:{1} -> 'eval()' kullanımı yasaktır!",
         "fail": "AI GUIDELINES İHLALLERİ TESPİT EDİLDİ:",
         "warnings": "Uyarılar (commit'i engellemez):",
         "retry": "Lütfen ihlalleri düzelttikten sonra tekrar deneyin.",
@@ -101,6 +116,19 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "v_comb": "[VERILOG VIOLATION] {0}:{1} -> non-blocking (<=) assignment in combinational block; use '='!",
         "v_latch": "[VERILOG VIOLATION] {0}:{1} -> combinational 'case' without 'default' (latch risk)!",
         "vhdl_lib": "[VHDL VIOLATION] {0}:{1} -> non-standard library; use 'ieee.numeric_std'!",
+        "c_unsafe": "[C VIOLATION] {0}:{1} -> unsafe function (gets/strcpy/strcat/sprintf); use the bounded alternative!",
+        "cs_dynamic": "[C# VIOLATION] {0}:{1} -> 'dynamic' is forbidden!",
+        "cs_async_void": "[C# VIOLATION] {0}:{1} -> 'async void' is forbidden; return Task!",
+        "java_generic_catch": "[JAVA VIOLATION] {0}:{1} -> generic catch (Exception/Throwable) is forbidden!",
+        "java_empty_catch": "[JAVA VIOLATION] {0}:{1} -> empty catch block is forbidden!",
+        "java_sysout": "[JAVA VIOLATION] {0}:{1} -> use a logger instead of System.out/err or printStackTrace!",
+        "js_var": "[JAVASCRIPT VIOLATION] {0}:{1} -> 'var' is forbidden; use const/let!",
+        "js_eq": "[JAVASCRIPT VIOLATION] {0}:{1} -> use '==='/'!==' instead of '=='/'!='!",
+        "kt_bang": "[KOTLIN VIOLATION] {0}:{1} -> the '!!' operator is forbidden!",
+        "kt_globalscope": "[KOTLIN VIOLATION] {0}:{1} -> 'GlobalScope' is forbidden; use a lifecycle-bound scope!",
+        "swift_force": "[SWIFT VIOLATION] {0}:{1} -> force unwrapping (!, try!, as!) is forbidden!",
+        "php_strict": "[PHP VIOLATION] {0}:1 -> missing 'declare(strict_types=1);'!",
+        "php_eval": "[PHP VIOLATION] {0}:{1} -> 'eval()' is forbidden!",
         "fail": "AI GUIDELINES VIOLATIONS DETECTED:",
         "warnings": "Warnings (do not block the commit):",
         "retry": "Please fix the violations above and try again.",
@@ -116,6 +144,10 @@ V_ALWAYS_RE = re.compile(r"\balways_ff\s*(@\s*\([^)]*\))?|\balways_comb\b|\balwa
 V_BLOCKING_RE = re.compile(r"^\s*[A-Za-z_][\w.]*(\s*\[[^\]]*\])*\s*=(?!=)")
 V_NONBLOCKING_RE = re.compile(r"^\s*[A-Za-z_][\w.]*(\s*\[[^\]]*\])*\s*<=")
 VHDL_LIB_RE = re.compile(r"\bieee\s*\.\s*std_logic_(unsigned|signed|arith)\b", re.IGNORECASE)
+C_UNSAFE_RE = re.compile(r"\b(gets|strcpy|strcat|sprintf|vsprintf)\s*\(")
+JS_LOOSE_EQ_RE = re.compile(r"(?<![=!<>])==(?!=)|!=(?!=)")
+JAVA_GENERIC_CATCH_RE = re.compile(r"\bcatch\s*\(\s*(final\s+)?(Exception|RuntimeException|Throwable)\s+\w+\s*\)")
+SWIFT_FORCE_RE = re.compile(r"\btry!|\bas!|[\w)\]]!(?!=)")
 
 
 def msg(key: str, *args: object) -> str:
@@ -284,10 +316,17 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
                     errors.append(msg("vhdl_lib", rel, idx))
         return
 
+    if ext == ".php" and "php_strict_types" in ENABLED_RULES and "<?php" in source:
+        if not re.search(r"declare\s*\(\s*strict_types\s*=\s*1\s*\)", source):
+            errors.append(msg("php_strict", rel))
+
     in_comment = False
     clones = 0
+    open_catch = 0  # line number of a Java catch whose body has not started yet
     for idx, raw in enumerate(lines, 1):
         code, in_comment = strip_c_like(raw, in_comment)
+        if ext == ".php":
+            code = code.split("#", 1)[0]
         if not code.strip():
             continue
         if ext == ".rs":
@@ -297,15 +336,51 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
         elif ext in (".ts", ".tsx"):
             if "ts_any" in ENABLED_RULES and TS_ANY_RE.search(code):
                 errors.append(msg("ts_any", rel, idx))
-        elif ext in CPP_EXTS:
-            if "cpp_raw_ptr" in ENABLED_RULES:
-                if CPP_NEW_RE.search(code) and "std::" not in code and "operator" not in code:
-                    errors.append(msg("cpp_new", rel, idx))
-                if re.search(r"\breinterpret_cast\b", code):
-                    errors.append(msg("cpp_cast", rel, idx))
+        elif ext in JS_EXTS:
+            if "js_no_var" in ENABLED_RULES and re.search(r"\bvar\s+[A-Za-z_$]", code):
+                errors.append(msg("js_var", rel, idx))
+            if "js_strict_eq" in ENABLED_RULES and JS_LOOSE_EQ_RE.search(code):
+                errors.append(msg("js_eq", rel, idx))
         elif ext == ".go":
             if "go_errors" in ENABLED_RULES and GO_IGNORE_RE.search(code) and not re.search(r"\brange\b", code):
                 errors.append(msg("go_err", rel, idx))
+        elif ext == ".cs":
+            if "cs_no_dynamic" in ENABLED_RULES and re.search(r"\bdynamic\b", code):
+                errors.append(msg("cs_dynamic", rel, idx))
+            if "cs_no_async_void" in ENABLED_RULES and re.search(r"\basync\s+void\b", code):
+                errors.append(msg("cs_async_void", rel, idx))
+        elif ext == ".java":
+            if "java_exceptions" in ENABLED_RULES:
+                stripped = code.strip()
+                if open_catch and stripped.startswith("}"):
+                    errors.append(msg("java_empty_catch", rel, open_catch))
+                open_catch = 0
+                if JAVA_GENERIC_CATCH_RE.search(code):
+                    errors.append(msg("java_generic_catch", rel, idx))
+                if re.search(r"\bcatch\s*\([^)]*\)\s*\{\s*\}", code):
+                    errors.append(msg("java_empty_catch", rel, idx))
+                elif re.search(r"\bcatch\s*\([^)]*\)\s*\{\s*$", code):
+                    open_catch = idx
+            if "java_no_sysout" in ENABLED_RULES and re.search(r"\bSystem\s*\.\s*(out|err)\s*\.|\.printStackTrace\s*\(", code):
+                errors.append(msg("java_sysout", rel, idx))
+        elif ext in (".kt", ".kts"):
+            if "kt_no_bang" in ENABLED_RULES and "!!" in code:
+                errors.append(msg("kt_bang", rel, idx))
+            if "kt_no_globalscope" in ENABLED_RULES and re.search(r"\bGlobalScope\b", code):
+                errors.append(msg("kt_globalscope", rel, idx))
+        elif ext == ".swift":
+            if "swift_no_force" in ENABLED_RULES and SWIFT_FORCE_RE.search(code):
+                errors.append(msg("swift_force", rel, idx))
+        elif ext == ".php":
+            if "php_no_eval" in ENABLED_RULES and re.search(r"\beval\s*\(", code):
+                errors.append(msg("php_eval", rel, idx))
+        if ext in C_EXTS and "c_unsafe_funcs" in ENABLED_RULES and C_UNSAFE_RE.search(code):
+            errors.append(msg("c_unsafe", rel, idx))
+        if ext in CPP_EXTS and "cpp_raw_ptr" in ENABLED_RULES:
+            if CPP_NEW_RE.search(code) and "std::" not in code and "operator" not in code:
+                errors.append(msg("cpp_new", rel, idx))
+            if re.search(r"\breinterpret_cast\b", code):
+                errors.append(msg("cpp_cast", rel, idx))
     if "rust_clone" in ENABLED_RULES and clones > CLONE_WARN_PER_FILE:
         warnings.append(msg("rust_clone", rel, clones))
 

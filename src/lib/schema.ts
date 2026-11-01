@@ -16,7 +16,26 @@ export const TARGET_PLATFORMS = [
   "GITHUB_COPILOT",
 ] as const;
 
-export const CODING_LANGUAGES = ["Rust", "TypeScript", "Python", "C++", "Go", "Verilog", "VHDL"] as const;
+export const SOFTWARE_LANGUAGES = [
+  "C", "C++", "C#", "Java", "JavaScript", "TypeScript", "Python", "Go", "Rust", "Kotlin", "Swift", "PHP",
+] as const;
+export const HDL_LANGUAGES = ["Verilog", "VHDL"] as const;
+export const CODING_LANGUAGES = [...SOFTWARE_LANGUAGES, ...HDL_LANGUAGES] as const;
+
+/** Every boolean safety switch of step 2 (single list used by schema, defaults and CLI). */
+export const SAFETY_SWITCH_KEYS = [
+  "cBanUnsafeFunctions", "cppNoRawPointers", "csNoDynamic", "csNoAsyncVoid",
+  "javaExceptionHandling", "javaNoSystemOut", "jsNoVar", "jsStrictEquality", "tsNoAny",
+  "pyTypeHints", "pyNoGlobalState", "goCheckErrors", "rustNoUnsafe", "rustLimitClone",
+  "ktNoForceUnwrap", "ktNoGlobalScope", "swiftNoForceUnwrap", "phpStrictTypes", "phpNoEval",
+  "hdlAssignmentRules", "hdlLatchPrevention",
+] as const;
+export type SafetySwitchKey = (typeof SAFETY_SWITCH_KEYS)[number];
+
+const switchShape = Object.fromEntries(SAFETY_SWITCH_KEYS.map((k) => [k, z.boolean()])) as Record<
+  SafetySwitchKey,
+  z.ZodBoolean
+>;
 
 export const MAX_LINES_MIN = 200;
 export const MAX_LINES_MAX = 1500;
@@ -42,15 +61,7 @@ export const wizardSchema = z
         .int("doc_score_range")
         .min(DOC_SCORE_MIN, "doc_score_range")
         .max(DOC_SCORE_MAX, "doc_score_range"),
-      rustNoUnsafe: z.boolean(),
-      rustLimitClone: z.boolean(),
-      tsNoAny: z.boolean(),
-      pyTypeHints: z.boolean(),
-      pyNoGlobalState: z.boolean(),
-      cppNoRawPointers: z.boolean(),
-      goCheckErrors: z.boolean(),
-      hdlAssignmentRules: z.boolean(),
-      hdlLatchPrevention: z.boolean(),
+      ...switchShape,
     }),
     memoryBank: z.object({
       projectName: z
@@ -97,15 +108,7 @@ export const DEFAULT_FORM_DATA: WizardFormData = {
   constraints: {
     maxLines: 800,
     docScoreThreshold: 8,
-    rustNoUnsafe: true,
-    rustLimitClone: true,
-    tsNoAny: true,
-    pyTypeHints: true,
-    pyNoGlobalState: true,
-    cppNoRawPointers: true,
-    goCheckErrors: true,
-    hdlAssignmentRules: true,
-    hdlLatchPrevention: true,
+    ...(Object.fromEntries(SAFETY_SWITCH_KEYS.map((k) => [k, true])) as Record<SafetySwitchKey, boolean>),
   },
   memoryBank: {
     projectName: "my-vibe-project",

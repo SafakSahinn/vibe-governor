@@ -9,24 +9,43 @@ export type TargetPlatform =
   | "GITHUB_COPILOT";
 
 export type CodingLanguage =
-  | "Rust"
+  | "C"
+  | "C++"
+  | "C#"
+  | "Java"
+  | "JavaScript"
   | "TypeScript"
   | "Python"
-  | "C++"
   | "Go"
+  | "Rust"
+  | "Kotlin"
+  | "Swift"
+  | "PHP"
   | "Verilog"
   | "VHDL";
 
 export interface ProjectConstraints {
   maxLines: number;
   docScoreThreshold: number;
-  rustNoUnsafe: boolean;
-  rustLimitClone: boolean;
+  cBanUnsafeFunctions: boolean;
+  cppNoRawPointers: boolean;
+  csNoDynamic: boolean;
+  csNoAsyncVoid: boolean;
+  javaExceptionHandling: boolean;
+  javaNoSystemOut: boolean;
+  jsNoVar: boolean;
+  jsStrictEquality: boolean;
   tsNoAny: boolean;
   pyTypeHints: boolean;
   pyNoGlobalState: boolean;
-  cppNoRawPointers: boolean;
   goCheckErrors: boolean;
+  rustNoUnsafe: boolean;
+  rustLimitClone: boolean;
+  ktNoForceUnwrap: boolean;
+  ktNoGlobalScope: boolean;
+  swiftNoForceUnwrap: boolean;
+  phpStrictTypes: boolean;
+  phpNoEval: boolean;
   hdlAssignmentRules: boolean;
   hdlLatchPrevention: boolean;
 }

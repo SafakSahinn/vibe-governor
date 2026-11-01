@@ -11,7 +11,13 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = path.join(ROOT, "bin", "vibe-governor.cjs");
-const ALL_LANGS = ["Rust", "TypeScript", "Python", "C++", "Go", "Verilog", "VHDL"];
+const ALL_LANGS = ["C", "C++", "C#", "Java", "JavaScript", "TypeScript", "Python", "Go", "Rust", "Kotlin", "Swift", "PHP", "Verilog", "VHDL"];
+const ALL_SWITCHES = [
+  "cBanUnsafeFunctions", "cppNoRawPointers", "csNoDynamic", "csNoAsyncVoid", "javaExceptionHandling",
+  "javaNoSystemOut", "jsNoVar", "jsStrictEquality", "tsNoAny", "pyTypeHints", "pyNoGlobalState",
+  "goCheckErrors", "rustNoUnsafe", "rustLimitClone", "ktNoForceUnwrap", "ktNoGlobalScope",
+  "swiftNoForceUnwrap", "phpStrictTypes", "phpNoEval", "hdlAssignmentRules", "hdlLatchPrevention",
+];
 
 const PYTHON = ["python3", "python", "py"].find(
   (cmd) => spawnSync(cmd, ["-c", "import sys; assert sys.version_info >= (3, 8)"]).status === 0
@@ -23,9 +29,7 @@ function baseConfig(overrides = {}) {
     targetPlatforms: ["CLAUDE_CLI", "ANTIGRAVITY", "CURSOR", "WINDSURF", "CLINE", "GITHUB_COPILOT"],
     languages: ALL_LANGS,
     constraints: {
-      maxLines: 800, docScoreThreshold: 8, rustNoUnsafe: true, rustLimitClone: true, tsNoAny: true,
-      pyTypeHints: true, pyNoGlobalState: true, cppNoRawPointers: true, goCheckErrors: true,
-      hdlAssignmentRules: true, hdlLatchPrevention: true,
+      maxLines: 800, docScoreThreshold: 8, ...Object.fromEntries(ALL_SWITCHES.map((k) => [k, true])),
     },
     memoryBank: {
       projectName: "test-proj", projectBrief: "", productContext: "", systemPatterns: "",
@@ -107,6 +111,13 @@ const GOOD = {
     "endmodule",
     "",
   ].join("\n"),
+  "src/a.c": '#include <stdio.h>\n/* strcpy(a, b) */\nsnprintf(buf, sizeof buf, "%s", "gets(x)");\nstrncpy(a, b, n);\n',
+  "src/A.java": 'try {\n  run();\n} catch (IOException e) {\n  log.warn("x", e);\n}\nString s = "System.out.println";\n',
+  "src/a.js": 'const a = 1;\nlet b = a === 1 ? 2 : 3;\nif (a !== b) {}\nconst s = "var x == 1";\n',
+  "src/a.cs": 'public async Task RunAsync() { }\nvar text = "dynamic";\n',
+  "src/a.kt": 'val x = y ?: return\nviewModelScope.launch { }\nval s = "!!"\n',
+  "src/a.swift": 'guard let v = value else { return }\nif a != b && !flag { }\nlet s = "try!"\n',
+  "src/a.php": '<?php\ndeclare(strict_types=1);\n# eval($x)\n$y = "eval(";\n',
   "rtl/a.vhd": "library ieee;\nuse ieee.numeric_std.all; -- not ieee.std_logic_unsigned\n",
 };
 
@@ -122,6 +133,21 @@ const BAD = [
   ["src/b.cpp", "Foo* p = new Foo();\n", "[C++ VIOLATION] src/b.cpp:1"],
   ["src/c.cpp", "auto q = reinterpret_cast<int*>(p);\n", "reinterpret_cast"],
   ["src/b.rs", "unsafe { x() }\n", "[RUST VIOLATION] src/b.rs:1"],
+  ["src/b.c", "strcpy(dst, src);\n", "[C VIOLATION] src/b.c:1"],
+  ["src/c.c", "sprintf(buf, fmt, x);\n", "[C VIOLATION] src/c.c:1"],
+  ["src/B.java", "try { a(); } catch (Exception e) { log(e); }\n", "generic catch"],
+  ["src/C.java", "try {\n  a();\n} catch (IOException e) {\n}\n", "[JAVA VIOLATION] src/C.java:3 -> empty catch"],
+  ["src/D.java", "System.out.println(x);\n", "[JAVA VIOLATION] src/D.java:1"],
+  ["src/b.js", "var a = 1;\n", "[JAVASCRIPT VIOLATION] src/b.js:1 -> 'var'"],
+  ["src/c.js", "if (a == b) {}\n", "[JAVASCRIPT VIOLATION] src/c.js:1 -> use '==='"],
+  ["src/b.cs", "dynamic d = x;\n", "[C# VIOLATION] src/b.cs:1 -> 'dynamic'"],
+  ["src/c.cs", "public async void Run() { }\n", "[C# VIOLATION] src/c.cs:1 -> 'async void'"],
+  ["src/b.kt", "val n = name!!.length\n", "[KOTLIN VIOLATION] src/b.kt:1 -> the '!!'"],
+  ["src/c.kt", "GlobalScope.launch { }\n", "[KOTLIN VIOLATION] src/c.kt:1 -> 'GlobalScope'"],
+  ["src/b.swift", "let v = value!\n", "[SWIFT VIOLATION] src/b.swift:1"],
+  ["src/c.swift", "let d = try! load()\n", "[SWIFT VIOLATION] src/c.swift:1"],
+  ["src/b.php", "<?php\necho 1;\n", "[PHP VIOLATION] src/b.php:1 -> missing"],
+  ["src/c.php", "<?php\ndeclare(strict_types=1);\neval($code);\n", "[PHP VIOLATION] src/c.php:3 -> 'eval()'"],
   ["rtl/b.v", "module m;\n  always @(posedge clk) begin\n    q = a;\n  end\nendmodule\n", "[VERILOG VIOLATION] rtl/b.v:3"],
   ["rtl/c.v", "module m;\n  always @(*) begin\n    y <= a;\n  end\nendmodule\n", "[VERILOG VIOLATION] rtl/c.v:3"],
   ["rtl/d.v", "module m;\n  always @(*) begin\n    case (s)\n      2'b00: y = a;\n    endcase\n  end\nendmodule\n", "rtl/d.v:3 -> combinational 'case' without 'default'"],
@@ -145,6 +171,18 @@ test("invalid presets are rejected with a validation message", () => {
   assert.match(res.stderr, /languages/);
   const dep = baseConfig({ automation: { includeCheckGuidelines: false } });
   assert.match(runCli(["init", `--preset=${preset(dep)}`, `--dir=${dir}`], dir).stderr, /checker_required/);
+});
+
+test("presets created before newer switches existed are still accepted", () => {
+  const old = baseConfig({ languages: ["Rust"] });
+  old.constraints = {
+    maxLines: 800, docScoreThreshold: 8, rustNoUnsafe: true, rustLimitClone: true, tsNoAny: true,
+    pyTypeHints: true, pyNoGlobalState: true, cppNoRawPointers: true, goCheckErrors: true,
+    hdlAssignmentRules: true, hdlLatchPrevention: true,
+  };
+  const dir = tmpDir();
+  const res = runCli(["init", `--preset=${preset(old)}`, `--dir=${dir}`], dir);
+  assert.equal(res.status, 0, res.stderr);
 });
 
 test("generated pack contains the expected files", () => {

@@ -131,6 +131,7 @@ const SOFTWARE_SECTIONS: Section[] = [
         en: "**Unsafe Function Ban:** Overflow-prone `gets`, `strcpy`, `strcat`, `sprintf`, `vsprintf` are forbidden; use bounded alternatives such as `fgets`, `strncpy`/`strlcpy`, `snprintf`.",
       },
       {
+        toggle: "cCheckMalloc",
         tr: "**Bellek Yönetimi:** Her `malloc`/`calloc`/`realloc` dönüşü `NULL` için denetlenmeli; her ayırmanın tek bir sahibi ve karşılık gelen tek bir `free` çağrısı olmalıdır.",
         en: "**Memory Management:** Check every `malloc`/`calloc`/`realloc` result for `NULL`; every allocation has exactly one owner and one matching `free`.",
       },
@@ -260,6 +261,7 @@ const SOFTWARE_SECTIONS: Section[] = [
         en: "**No `eval`:** `eval()` is strictly forbidden (code injection risk).",
       },
       {
+        toggle: "phpPreparedStatements",
         tr: "**SQL Güvenliği ve Standart:** Sorgular yalnızca hazırlanmış ifadelerle (PDO prepared statements) yazılmalı; PSR-12 kod standardına uyulmalıdır.",
         en: "**SQL Safety & Style:** Write queries only with prepared statements (PDO); follow the PSR-12 coding standard.",
       },

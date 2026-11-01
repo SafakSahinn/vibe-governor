@@ -13,10 +13,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = path.join(ROOT, "bin", "vibe-governor.cjs");
 const ALL_LANGS = ["C", "C++", "C#", "Java", "JavaScript", "TypeScript", "Python", "Go", "Rust", "Kotlin", "Swift", "PHP", "Verilog", "VHDL"];
 const ALL_SWITCHES = [
-  "cBanUnsafeFunctions", "cppNoRawPointers", "csNoDynamic", "csNoAsyncVoid", "javaExceptionHandling",
+  "cBanUnsafeFunctions", "cCheckMalloc", "cppNoRawPointers", "csNoDynamic", "csNoAsyncVoid", "javaExceptionHandling",
   "javaNoSystemOut", "jsNoVar", "jsStrictEquality", "tsNoAny", "pyTypeHints", "pyNoGlobalState",
   "goCheckErrors", "rustNoUnsafe", "rustLimitClone", "ktNoForceUnwrap", "ktNoGlobalScope",
-  "swiftNoForceUnwrap", "phpStrictTypes", "phpNoEval", "hdlAssignmentRules", "hdlLatchPrevention",
+  "swiftNoForceUnwrap", "phpStrictTypes", "phpNoEval", "phpPreparedStatements", "hdlAssignmentRules", "hdlLatchPrevention",
 ];
 
 const PYTHON = ["python3", "python", "py"].find(
@@ -119,6 +119,46 @@ const GOOD = {
   "src/a.swift": 'guard let v = value else { return }\nif a != b && !flag { }\nlet s = "try!"\n',
   "src/a.php": '<?php\ndeclare(strict_types=1);\n# eval($x)\n$y = "eval(";\n',
   "rtl/a.vhd": "library ieee;\nuse ieee.numeric_std.all; -- not ieee.std_logic_unsigned\n",
+  "src/alloc.c": [
+    "int *a = malloc(n * sizeof *a);",
+    "if (!a) return -1;",
+    "s->buf = (char *)calloc(1, len);",
+    "if (s->buf == NULL) { return -1; }",
+    "if ((p = malloc(8)) == NULL) abort();",
+    "q = realloc(q, 16);",
+    "assert(q);",
+    "",
+  ].join("\n"),
+  "src/db.php": [
+    "<?php",
+    "declare(strict_types=1);",
+    "$stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');",
+    "$stmt->execute([$id]);",
+    "$rows = $pdo->query('SELECT COUNT(*) FROM users');",
+    "",
+  ].join("\n"),
+  "rtl/mux.vhd": [
+    "entity mux is",
+    "  port (a, b : in std_logic; sel : in std_logic; clk : in std_logic; y, q : out std_logic);",
+    "end entity;",
+    "architecture rtl of mux is",
+    "  signal t : std_logic;",
+    "begin",
+    "  comb : process (a, b, sel)",
+    "  begin",
+    "    if sel = '1' then y <= a; else y <= b; end if;",
+    "  end process;",
+    "  seq : process (clk)",
+    "  begin",
+    "    if rising_edge(clk) then q <= t; end if;",
+    "  end process;",
+    "  p2 : process (all)",
+    "  begin",
+    "    t <= a and b;",
+    "  end process;",
+    "end architecture;",
+    "",
+  ].join("\n"),
 };
 
 const BAD = [
@@ -152,6 +192,14 @@ const BAD = [
   ["rtl/c.v", "module m;\n  always @(*) begin\n    y <= a;\n  end\nendmodule\n", "[VERILOG VIOLATION] rtl/c.v:3"],
   ["rtl/d.v", "module m;\n  always @(*) begin\n    case (s)\n      2'b00: y = a;\n    endcase\n  end\nendmodule\n", "rtl/d.v:3 -> combinational 'case' without 'default'"],
   ["rtl/b.vhd", "use ieee.std_logic_unsigned.all;\n", "[VHDL VIOLATION] rtl/b.vhd:1"],
+  [
+    "rtl/c.vhd",
+    "entity c is\n  port (a, b, sel : in std_logic; y : out std_logic);\nend entity;\narchitecture rtl of c is\nbegin\n  process (a, b)\n  begin\n    if sel = '1' then y <= a; else y <= b; end if;\n  end process;\nend architecture;\n",
+    "[VHDL VIOLATION] rtl/c.vhd:6 -> combinational process is missing signal(s) in its sensitivity list: sel",
+  ],
+  ["src/d.c", "char *p = malloc(64);\nstrncpy(p, s, 63);\nuse(p);\nfree(p);\n", "[C VIOLATION] src/d.c:1 -> allocation result of 'p'"],
+  ["src/d.php", "<?php\ndeclare(strict_types=1);\n$r = $db->query(\"SELECT * FROM t WHERE id = $id\");\n", "[PHP VIOLATION] src/d.php:3 -> variable interpolated"],
+  ["src/e.php", "<?php\ndeclare(strict_types=1);\n$r = mysqli_query($c, 'SELECT * FROM t WHERE n = ' . $name);\n", "[PHP VIOLATION] src/e.php:3 -> variable interpolated"],
 ];
 
 const opts = { skip: PYTHON ? false : "Python 3 not available" };

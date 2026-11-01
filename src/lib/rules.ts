@@ -7,6 +7,7 @@ import type { CodingLanguage, ProjectConstraints, WizardFormData } from "../type
  */
 export type RuleId =
   | "c_unsafe_funcs"
+  | "c_malloc_check"
   | "cpp_raw_ptr"
   | "cs_no_dynamic"
   | "cs_no_async_void"
@@ -25,9 +26,11 @@ export type RuleId =
   | "swift_no_force"
   | "php_strict_types"
   | "php_no_eval"
+  | "php_prepared"
   | "verilog_assign"
   | "verilog_latch"
-  | "vhdl_numeric_std";
+  | "vhdl_numeric_std"
+  | "vhdl_sensitivity";
 
 interface RuleDef {
   id: RuleId;
@@ -38,6 +41,7 @@ interface RuleDef {
 
 const RULE_DEFS: RuleDef[] = [
   { id: "c_unsafe_funcs", language: "C", toggle: "cBanUnsafeFunctions", summary: "C no gets/strcpy/strcat/sprintf" },
+  { id: "c_malloc_check", language: "C", toggle: "cCheckMalloc", summary: "C malloc/calloc/realloc NULL checks" },
   { id: "cpp_raw_ptr", language: "C++", toggle: "cppNoRawPointers", summary: "C++ no raw new/delete & reinterpret_cast" },
   { id: "cs_no_dynamic", language: "C#", toggle: "csNoDynamic", summary: "C# no dynamic" },
   { id: "cs_no_async_void", language: "C#", toggle: "csNoAsyncVoid", summary: "C# no async void" },
@@ -56,9 +60,11 @@ const RULE_DEFS: RuleDef[] = [
   { id: "swift_no_force", language: "Swift", toggle: "swiftNoForceUnwrap", summary: "Swift no force unwrap / try! / as!" },
   { id: "php_strict_types", language: "PHP", toggle: "phpStrictTypes", summary: "PHP declare(strict_types=1)" },
   { id: "php_no_eval", language: "PHP", toggle: "phpNoEval", summary: "PHP no eval()" },
+  { id: "php_prepared", language: "PHP", toggle: "phpPreparedStatements", summary: "PHP prepared statements (no interpolated SQL)" },
   { id: "verilog_assign", language: "Verilog", toggle: "hdlAssignmentRules", summary: "Verilog non-blocking (<=) sequential / blocking (=) combinational" },
   { id: "verilog_latch", language: "Verilog", toggle: "hdlLatchPrevention", summary: "Verilog latch prevention (case default)" },
   { id: "vhdl_numeric_std", language: "VHDL", toggle: "hdlAssignmentRules", summary: "VHDL ieee.numeric_std only" },
+  { id: "vhdl_sensitivity", language: "VHDL", toggle: "hdlLatchPrevention", summary: "VHDL complete sensitivity lists" },
 ];
 
 /** Returns true when a constraint switch is both enabled and relevant to a selected language. */

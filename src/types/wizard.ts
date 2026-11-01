@@ -28,6 +28,7 @@ export interface ProjectConstraints {
   maxLines: number;
   docScoreThreshold: number;
   cBanUnsafeFunctions: boolean;
+  cCheckMalloc: boolean;
   cppNoRawPointers: boolean;
   csNoDynamic: boolean;
   csNoAsyncVoid: boolean;
@@ -46,6 +47,7 @@ export interface ProjectConstraints {
   swiftNoForceUnwrap: boolean;
   phpStrictTypes: boolean;
   phpNoEval: boolean;
+  phpPreparedStatements: boolean;
   hdlAssignmentRules: boolean;
   hdlLatchPrevention: boolean;
 }

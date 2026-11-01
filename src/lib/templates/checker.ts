@@ -89,6 +89,9 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "swift_force": "[SWIFT VIOLATION] {0}:{1} -> Zorla açma (!, try!, as!) yasaktır!",
         "php_strict": "[PHP VIOLATION] {0}:1 -> 'declare(strict_types=1);' eksik!",
         "php_eval": "[PHP VIOLATION] {0}:{1} -> 'eval()' kullanımı yasaktır!",
+        "php_sql": "[PHP VIOLATION] {0}:{1} -> SQL sorgusuna değişken gömülmüş; hazırlanmış ifade (prepare + bind) kullanın!",
+        "c_malloc": "[C VIOLATION] {0}:{1} -> '{2}' için bellek ayırma sonucu NULL kontrolü yapılmıyor!",
+        "vhdl_sens": "[VHDL VIOLATION] {0}:{1} -> Kombinasyonel process duyarlılık listesinde eksik sinyal(ler): {2}",
         "fail": "AI GUIDELINES İHLALLERİ TESPİT EDİLDİ:",
         "warnings": "Uyarılar (commit'i engellemez):",
         "retry": "Lütfen ihlalleri düzelttikten sonra tekrar deneyin.",
@@ -129,6 +132,9 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "swift_force": "[SWIFT VIOLATION] {0}:{1} -> force unwrapping (!, try!, as!) is forbidden!",
         "php_strict": "[PHP VIOLATION] {0}:1 -> missing 'declare(strict_types=1);'!",
         "php_eval": "[PHP VIOLATION] {0}:{1} -> 'eval()' is forbidden!",
+        "php_sql": "[PHP VIOLATION] {0}:{1} -> variable interpolated into SQL; use prepared statements (prepare + bind)!",
+        "c_malloc": "[C VIOLATION] {0}:{1} -> allocation result of '{2}' is not NULL-checked!",
+        "vhdl_sens": "[VHDL VIOLATION] {0}:{1} -> combinational process is missing signal(s) in its sensitivity list: {2}",
         "fail": "AI GUIDELINES VIOLATIONS DETECTED:",
         "warnings": "Warnings (do not block the commit):",
         "retry": "Please fix the violations above and try again.",
@@ -148,6 +154,11 @@ C_UNSAFE_RE = re.compile(r"\b(gets|strcpy|strcat|sprintf|vsprintf)\s*\(")
 JS_LOOSE_EQ_RE = re.compile(r"(?<![=!<>])==(?!=)|!=(?!=)")
 JAVA_GENERIC_CATCH_RE = re.compile(r"\bcatch\s*\(\s*(final\s+)?(Exception|RuntimeException|Throwable)\s+\w+\s*\)")
 SWIFT_FORCE_RE = re.compile(r"\btry!|\bas!|[\w)\]]!(?!=)")
+C_ALLOC_RE = re.compile(r"([A-Za-z_]\w*(?:\s*(?:->|\.)\s*[A-Za-z_]\w*)*)\s*=\s*(?:\([^)]*\)\s*)?(?:malloc|calloc|realloc)\s*\(")
+PHP_QUERY_RE = re.compile(r"(->\s*(query|exec)|\b(mysqli_query|pg_query|mysql_query))\s*\(")
+PHP_INTERPOLATED_RE = re.compile(r"\"[^\"]*\$\w|\.\s*\$\w|\$\w+\s*\.\s*['\"]")
+VHDL_PROCESS_RE = re.compile(r"\bprocess\s*\(([^)]*)\)(.*?)\bend\s+process\b", re.IGNORECASE | re.DOTALL)
+VHDL_IDENT_RE = re.compile(r"[A-Za-z]\w*")
 
 
 def msg(key: str, *args: object) -> str:
@@ -289,6 +300,57 @@ def check_verilog(rel: str, lines: List[str], errors: List[str]) -> None:
             block = None
 
 
+def check_c_malloc(rel: str, lines: List[str], errors: List[str]) -> None:
+    """Each malloc/calloc/realloc result must be NULL-checked on the same or one of the next 3 code lines."""
+    in_comment = False
+    code_lines: List[Tuple[int, str]] = []
+    for idx, raw in enumerate(lines, 1):
+        code, in_comment = strip_c_like(raw, in_comment)
+        if code.strip():
+            code_lines.append((idx, code))
+    for pos, (idx, code) in enumerate(code_lines):
+        m = C_ALLOC_RE.search(code)
+        if not m:
+            continue
+        var = re.sub(r"\s+", "", m.group(1))
+        name = re.escape(var)
+        checks = (
+            r"!\s*\(?\s*" + name + r"\b",
+            r"\b" + name + r"\s*[!=]=\s*(NULL|nullptr|0)\b",
+            r"\b(NULL|nullptr)\s*[!=]=\s*" + name + r"\b",
+            r"\b(if|while|assert)\s*\(\s*" + name + r"\s*\)",
+            r"\bassert\s*\(\s*" + name + r"\b",
+        )
+        window = [re.sub(r"\s*(->|\.)\s*", r"\1", c) for _, c in code_lines[pos:pos + 4]]
+        if re.search(r"\)\s*[!=]=\s*(NULL|nullptr|0)\b", code):  # if ((p = malloc(n)) == NULL)
+            continue
+        if not any(re.search(pattern, text) for pattern in checks for text in window):
+            errors.append(msg("c_malloc", rel, idx, var))
+
+
+def check_vhdl_sensitivity(rel: str, lines: List[str], errors: List[str]) -> None:
+    """Combinational processes must list every declared signal / input port they read."""
+    text = "\n".join(raw.split("--", 1)[0] for raw in lines)
+    lowered = text.lower()
+    declared: Set[str] = set()
+    for m in re.finditer(r"\bsignal\s+([\w\s,]+?)\s*:", lowered):
+        declared.update(n.strip() for n in m.group(1).split(",") if n.strip())
+    for m in re.finditer(r"([\w\s,]+?)\s*:\s*(in|inout|buffer)\b", lowered):
+        names = m.group(1).replace("(", " ").replace(";", " ").split(",")
+        declared.update(n.strip().split()[-1] for n in names if n.strip())
+    for m in VHDL_PROCESS_RE.finditer(lowered):
+        sens = {s.strip() for s in m.group(1).split(",") if s.strip()}
+        body = m.group(2)
+        if "all" in sens or re.search(r"rising_edge|falling_edge|'event", body):
+            continue
+        body = re.sub(r"\bbegin\b", " ", body.split("begin", 1)[-1] if "begin" in body else body)
+        reads = re.sub(r"[A-Za-z]\w*(\s*\([^)]*\))?\s*<=", " ", body)  # drop assignment targets
+        missing = sorted({w for w in VHDL_IDENT_RE.findall(reads) if w in declared} - sens)
+        if missing:
+            line_no = lowered.count("\n", 0, m.start()) + 1
+            errors.append(msg("vhdl_sens", rel, line_no, ", ".join(missing)))
+
+
 def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) -> None:
     """Runs line-limit and language-specific checks on one source file."""
     try:
@@ -314,7 +376,11 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
             for idx, raw in enumerate(lines, 1):
                 if VHDL_LIB_RE.search(raw.split("--", 1)[0]):
                     errors.append(msg("vhdl_lib", rel, idx))
+        if "vhdl_sensitivity" in ENABLED_RULES:
+            check_vhdl_sensitivity(rel, lines, errors)
         return
+    if ext == ".c" and "c_malloc_check" in ENABLED_RULES:
+        check_c_malloc(rel, lines, errors)
 
     if ext == ".php" and "php_strict_types" in ENABLED_RULES and "<?php" in source:
         if not re.search(r"declare\s*\(\s*strict_types\s*=\s*1\s*\)", source):
@@ -374,6 +440,10 @@ def analyze_file(path: str, rel: str, errors: List[str], warnings: List[str]) ->
         elif ext == ".php":
             if "php_no_eval" in ENABLED_RULES and re.search(r"\beval\s*\(", code):
                 errors.append(msg("php_eval", rel, idx))
+            if "php_prepared" in ENABLED_RULES:
+                call = PHP_QUERY_RE.search(raw)
+                if call and PHP_INTERPOLATED_RE.search(raw[call.end():]):
+                    errors.append(msg("php_sql", rel, idx))
         if ext in C_EXTS and "c_unsafe_funcs" in ENABLED_RULES and C_UNSAFE_RE.search(code):
             errors.append(msg("c_unsafe", rel, idx))
         if ext in CPP_EXTS and "cpp_raw_ptr" in ENABLED_RULES:

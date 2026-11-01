@@ -1,9 +1,38 @@
 "use client";
 
 import React, { useState } from "react";
-import { GeneratedFile } from "@/types/wizard";
-import { Copy, Check, Download, FileCode } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Copy, Check, Download, FileCode, Loader2 } from "lucide-react";
+import type { GeneratedFile } from "@/types/wizard";
 import { downloadSingleFile } from "@/lib/exporter";
+
+// Monaco touches `window`, so it is loaded on the client only.
+const MonacoEditor = dynamic(() => import("@monaco-editor/react").then((m) => m.default), {
+  ssr: false,
+  loading: () => <EditorLoading />,
+});
+
+function EditorLoading() {
+  return (
+    <div className="h-full flex items-center justify-center text-slate-500 text-xs gap-2">
+      <Loader2 className="w-4 h-4 animate-spin" />
+      <span>Monaco Editor…</span>
+    </div>
+  );
+}
+
+/** Maps our file language ids to Monaco language ids. */
+function monacoLanguage(language: string): string {
+  switch (language) {
+    case "markdown":
+    case "python":
+    case "yaml":
+    case "shell":
+      return language;
+    default:
+      return "plaintext";
+  }
+}
 
 interface CodeViewerProps {
   file: GeneratedFile | null;
@@ -35,22 +64,19 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({ file, locale }) => {
     }
   };
 
-  const lines = file.content.split("\n");
+  const lineCount = file.content.replace(/\n$/, "").split("\n").length;
 
   return (
-    <div className="flex flex-col h-full min-h-[500px] border border-slate-800 rounded-2xl bg-slate-950/90 overflow-hidden shadow-2xl">
-      {/* Viewer Header */}
+    <div className="flex flex-col h-full min-h-[560px] border border-slate-800 rounded-2xl bg-slate-950/90 overflow-hidden shadow-2xl">
       <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-800">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
-          <span className="font-mono text-xs text-white font-medium truncate">
-            {file.path}
-          </span>
+          <span className="font-mono text-xs text-white font-medium truncate">{file.path}</span>
           <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
             {file.language}
           </span>
           <span className="text-[11px] text-slate-500 font-mono">
-            {lines.length} {isTr ? "satır" : "lines"}
+            {lineCount} {isTr ? "satır" : "lines"}
           </span>
         </div>
 
@@ -84,22 +110,25 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({ file, locale }) => {
         </div>
       </div>
 
-      {/* Code Content Area with Line Numbers */}
-      <div className="flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed">
-        <div className="grid grid-cols-[3rem_1fr] gap-4">
-          <div className="text-right text-slate-600 select-none space-y-0.5">
-            {lines.map((_, i) => (
-              <div key={i}>{i + 1}</div>
-            ))}
-          </div>
-          <pre className="text-slate-300 whitespace-pre overflow-x-auto space-y-0.5 font-mono">
-            {lines.map((line, i) => (
-              <div key={i} className="hover:bg-slate-900/50 px-1 rounded">
-                {line || " "}
-              </div>
-            ))}
-          </pre>
-        </div>
+      <div className="flex-1 min-h-[500px]">
+        <MonacoEditor
+          height="100%"
+          theme="vs-dark"
+          path={file.path}
+          language={monacoLanguage(file.language)}
+          value={file.content}
+          loading={<EditorLoading />}
+          options={{
+            readOnly: true,
+            domReadOnly: true,
+            minimap: { enabled: false },
+            fontSize: 12,
+            scrollBeyondLastLine: false,
+            wordWrap: "on",
+            renderLineHighlight: "none",
+            automaticLayout: true,
+          }}
+        />
       </div>
     </div>
   );

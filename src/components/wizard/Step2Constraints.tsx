@@ -2,7 +2,8 @@
 
 import React from "react";
 import { ProjectConstraints, WizardFormData } from "@/types/wizard";
-import { AlertTriangle, ShieldCheck, FileCode2, BookOpenCheck } from "lucide-react";
+import { AlertTriangle, FileCode2, BookOpenCheck } from "lucide-react";
+import { SafetySwitches } from "./SafetySwitches";
 
 interface Step2Props {
   data: WizardFormData;
@@ -24,13 +25,6 @@ export const Step2Constraints: React.FC<Step2Props> = ({ data, updateData }) => 
       },
     });
   };
-
-  const hasRust = data.languages.includes("Rust");
-  const hasTS = data.languages.includes("TypeScript");
-  const hasPy = data.languages.includes("Python");
-  const hasCpp = data.languages.includes("C++");
-  const hasGo = data.languages.includes("Go");
-  const hasHDL = data.languages.includes("Verilog") || data.languages.includes("VHDL");
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -81,9 +75,9 @@ export const Step2Constraints: React.FC<Step2Props> = ({ data, updateData }) => 
                 className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
               />
               <div className="flex justify-between text-[11px] text-slate-500 font-mono">
-                <span>200 satır (Aşırı Katı)</span>
-                <span className="text-indigo-400 font-bold">800 (Önerilen)</span>
-                <span>1500 satır (Gevşek)</span>
+                <span>{isTr ? "200 satır (Aşırı Katı)" : "200 lines (Very strict)"}</span>
+                <span className="text-indigo-400 font-bold">{isTr ? "800 (Önerilen)" : "800 (Recommended)"}</span>
+                <span>{isTr ? "1500 satır (Gevşek)" : "1500 lines (Loose)"}</span>
               </div>
             </div>
           </div>
@@ -133,9 +127,9 @@ export const Step2Constraints: React.FC<Step2Props> = ({ data, updateData }) => 
                 className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
               <div className="flex justify-between text-[11px] text-slate-500 font-mono">
-                <span>5 (Temel)</span>
-                <span className="text-emerald-400 font-bold">8 (Önerilen Baraj)</span>
-                <span>10 (Kapsamlı JSDoc / Docstring)</span>
+                <span>{isTr ? "5 (Temel)" : "5 (Basic)"}</span>
+                <span className="text-emerald-400 font-bold">{isTr ? "8 (Önerilen Baraj)" : "8 (Recommended)"}</span>
+                <span>{isTr ? "10 (Kapsamlı JSDoc / Docstring)" : "10 (Full JSDoc / Docstring)"}</span>
               </div>
             </div>
           </div>
@@ -148,229 +142,7 @@ export const Step2Constraints: React.FC<Step2Props> = ({ data, updateData }) => 
         </div>
       </div>
 
-      {/* Language Specific Safety Switches */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-sm font-semibold text-white">
-              {isTr ? "Dile Özel Güvenlik Anahtarları" : "Language-Specific Safety Gates"}
-            </h3>
-          </div>
-          <span className="text-xs text-slate-500">
-            {isTr ? "Seçilen dillere göre otomatik önerilir" : "Recommended based on selected languages"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Rust No-Unsafe */}
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              hasRust ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-800/60">
-                    Rust
-                  </span>
-                  <span className="text-sm font-semibold text-white">Unsafe Blok Yasağı</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "Yapay zekanın bellek yönetiminde unsafe bloklarına kaçmasını yasaklar."
-                    : "Strictly forbids AI from taking shortcuts with unsafe blocks in Rust."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.rustNoUnsafe}
-                onChange={(e) => updateConstraint("rustNoUnsafe", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Rust Clone limit */}
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              hasRust ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-800/60">
-                    Rust
-                  </span>
-                  <span className="text-sm font-semibold text-white">Gereksiz .clone() Kısıtı</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "Performans israfını önler; borrow checker mekanizmalarını zorlar."
-                    : "Enforces proper ownership & borrowing instead of wasteful .clone() calls."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.rustLimitClone}
-                onChange={(e) => updateConstraint("rustLimitClone", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-
-          {/* TypeScript No Any */}
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              hasTS ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-blue-400 px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60">
-                    TypeScript
-                  </span>
-                  <span className="text-sm font-semibold text-white">No `any` Tipi Yasağı</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "`any` veri tipi kullanımını tamamen engeller; katı tipleri zorunlu tutar."
-                    : "Zero tolerance for 'any' types; enforces explicit interfaces and types."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.tsNoAny}
-                onChange={(e) => updateConstraint("tsNoAny", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Python Type Hints & No Globals */}
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              hasPy ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-yellow-400 px-1.5 py-0.5 rounded bg-yellow-950/60 border border-yellow-800/60">
-                    Python
-                  </span>
-                  <span className="text-sm font-semibold text-white">Type Hints & Global Yasakları</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "Fonksiyonlarda tip ipuçlarını zorunlu tutar, `from module import *` kullanımını yasaklar."
-                    : "Mandatory typing annotations; bans wildcard imports and global mutations."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.pyTypeHints}
-                onChange={(e) => updateConstraint("pyTypeHints", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-
-          {/* C++ No Raw Pointers */}
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              hasCpp ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-purple-400 px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/60">
-                    C++
-                  </span>
-                  <span className="text-sm font-semibold text-white">Ham İşaretçi (Raw Pointer) Yasağı</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "Manuel `new`/`delete` yerine `std::unique_ptr` ve `std::shared_ptr` kullanımını şart koşar."
-                    : "Replaces manual new/delete with RAII smart pointers (unique_ptr, shared_ptr)."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.cppNoRawPointers}
-                onChange={(e) => updateConstraint("cppNoRawPointers", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Go Explicit Error Handling */}
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              hasGo ? "bg-slate-900/90 border-slate-700" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/60">
-                    Go
-                  </span>
-                  <span className="text-sm font-semibold text-white">Hata Denetim (Err) Zorunluluğu</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "`_` ile hata göz ardı etmeyi yasaklar; açık hata kontrolü ve goroutine koruması ister."
-                    : "Forbids ignoring err with `_`; enforces explicit error checks and goroutine safety."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.goCheckErrors}
-                onChange={(e) => updateConstraint("goCheckErrors", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-
-          {/* HDL (Verilog / VHDL) */}
-          <div
-            className={`md:col-span-2 p-4 rounded-xl border transition-all ${
-              hasHDL ? "bg-cyan-950/30 border-cyan-700/60" : "bg-slate-950/40 border-slate-800/50 opacity-70"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-700/60">
-                    Verilog & VHDL
-                  </span>
-                  <span className="text-sm font-semibold text-white">
-                    {isTr
-                      ? "Non-blocking (<=) / Blocking (=) Ayrımı ve Latch Önleme"
-                      : "Non-blocking (<=) / Blocking (=) Separation & Latch Prevention"}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  {isTr
-                    ? "Ardışıl devrelerde `<=` ve kombinasyonel devrelerde `=` kuralını zorunlu tutar. Eksik `case/if` nedeniyle oluşabilecek mandalları (transparent latches) engeller."
-                    : "Enforces strict assignment mechanics (non-blocking for sequential, blocking for combinational) and prevents unintended transparent latches."}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={constraints.hdlAssignmentRules}
-                onChange={(e) => updateConstraint("hdlAssignmentRules", e.target.checked)}
-                className="w-5 h-5 rounded border-cyan-700 text-cyan-500 focus:ring-cyan-500 bg-slate-800 cursor-pointer mt-1"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <SafetySwitches data={data} isTr={isTr} onToggle={updateConstraint} />
     </div>
   );
 };

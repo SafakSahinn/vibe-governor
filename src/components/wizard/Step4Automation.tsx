@@ -13,18 +13,24 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
   const isTr = data.locale === "tr";
   const { automation } = data;
 
+  // The hook and the CI workflow both execute scripts/check_guidelines.py, so they
+  // cannot exist without it: enabling them enables the checker, disabling the checker disables them.
   const toggleOption = (key: keyof AutomationOptions) => {
-    updateData({
-      automation: {
-        ...automation,
-        [key]: !automation[key],
-      },
-    });
+    const next: AutomationOptions = { ...automation, [key]: !automation[key] };
+    if ((key === "includePreCommitHook" || key === "includeGitHubCI") && next[key]) {
+      next.includeCheckGuidelines = true;
+    }
+    if (key === "includeCheckGuidelines" && !next.includeCheckGuidelines) {
+      next.includePreCommitHook = false;
+      next.includeGitHubCI = false;
+    }
+    updateData({ automation: next });
   };
 
   const automations: {
     key: keyof AutomationOptions;
-    title: string;
+    titleTr: string;
+    titleEn: string;
     targetPath: string;
     descTr: string;
     descEn: string;
@@ -33,18 +39,20 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
   }[] = [
     {
       key: "includeCheckGuidelines",
-      title: "Statik AI Denetçi Betiği",
+      titleTr: "Statik AI Denetçi Betiği",
+      titleEn: "Static AI Guidelines Checker",
       targetPath: "scripts/check_guidelines.py",
       descTr:
-        "Tüm kod tabanını tarar; 800 satır sınırını, Rust unsafe, TS any, C++ ham new ve Python import * ihlallerini anında yakalar.",
+        `Tüm kod tabanını tarar; ${data.constraints.maxLines} satır sınırını ve yalnızca seçtiğiniz dillerin kurallarını (Rust unsafe, TS any, Python tip ipuçları, C++ ham new, Go hata kontrolü, Verilog atama/latch, VHDL numeric_std) denetler.`,
       descEn:
-        "Python script that scans line counts, detects unsafe/any usages, and verifies Memory Bank completeness.",
+        `Scans line counts (max ${data.constraints.maxLines}), Memory Bank completeness and only the rules of your selected languages (Rust unsafe, TS any, Python hints, C++ raw new, Go errors, Verilog assignment/latch, VHDL numeric_std).`,
       icon: <Terminal className="w-5 h-5 text-indigo-400" />,
       badge: "Python 3.12+",
     },
     {
       key: "includePreCommitHook",
-      title: "Git Pre-Commit Engelleyici Kanca",
+      titleTr: "Git Pre-Commit Engelleyici Kanca",
+      titleEn: "Git Pre-Commit Blocking Hook",
       targetPath: "scripts/pre-commit-hook.sh",
       descTr:
         "Commit yapmadan önce otomatik denetçiyi çalıştırır. Kural ihlali varsa commit işlemini durdurur.",
@@ -55,7 +63,8 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
     },
     {
       key: "includeGitHubCI",
-      title: "GitHub Actions CI/CD Entegrasyonu",
+      titleTr: "GitHub Actions CI/CD Entegrasyonu",
+      titleEn: "GitHub Actions CI/CD Integration",
       targetPath: ".github/workflows/ai-guidelines-ci.yml",
       descTr:
         "Push ve Pull Request tetiklendiğinde otomatik kontrol koşturur. Hatalı PR birleştirmelerini önler.",
@@ -66,10 +75,11 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
     },
     {
       key: "includeAuditPrompt",
-      title: "Frontier Model Periyodik Denetim İstemi",
+      titleTr: "Frontier Model Periyodik Denetim İstemi",
+      titleEn: "Frontier Model Periodic Audit Prompt",
       targetPath: "AUDIT_PROMPT.md",
       descTr:
-        "Claude 3.5/3.7 Sonnet, Opus ve GPT-4o modelleri için sıfır-kod-değişikliği ile teknik borç raporu çıkarma promptu.",
+        "Claude Opus/Sonnet ve GPT-4o gibi modeller için kodu değiştirmeden teknik borç raporu çıkarma promptu (TR + EN).",
       descEn:
         "Prompt template for periodic technical debt and spaghetti code scans with frontier LLMs.",
       icon: <FileQuestion className="w-5 h-5 text-amber-400" />,
@@ -77,7 +87,8 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
     },
     {
       key: "includeGitignore",
-      title: "Memory Bank Korumalı .gitignore",
+      titleTr: "Memory Bank Korumalı .gitignore",
+      titleEn: "Memory Bank-Safe .gitignore",
       targetPath: ".gitignore",
       descTr:
         "Geçici denetim raporlarını ve geçici dosyaları dışlar, ancak `.memory_bank/` dosyalarını zorunlu olarak git takibinde tutar.",
@@ -129,7 +140,7 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
 
                 <div>
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                    <h3 className="text-sm font-semibold text-white">{isTr ? item.titleTr : item.titleEn}</h3>
                     <span className="text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/60">
                       {item.targetPath}
                     </span>

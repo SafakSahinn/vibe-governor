@@ -7,11 +7,12 @@ import { FileText, Sparkles, FolderArchive, Layers, Wrench, Focus, BarChart3 } f
 interface Step3Props {
   data: WizardFormData;
   updateData: (fields: Partial<WizardFormData>) => void;
+  projectNameError?: string;
 }
 
 type TabKey = keyof Omit<MemoryBankData, "projectName">;
 
-export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData }) => {
+export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData, projectNameError }) => {
   const isTr = data.locale === "tr";
   const { memoryBank } = data;
   const [activeTab, setActiveTab] = useState<TabKey>("projectBrief");
@@ -36,7 +37,7 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData }) => {
           projectBrief: "Büyük ölçekli, yüksek performanslı ve AI destekli modüler kurumsal yazılım platformu.",
           productContext: "Yapay zeka modellerinin uzun oturumlarda bağlam kaybı yaşamasını engellemek, geliştiriciye tavizsiz mimari rehberlik sunmak.",
           systemPatterns: "Modüler Crate / Clean Architecture. UI Katmanı, Core Logic ve Data Access birbirinden bağımsızdır.",
-          techContext: `${data.languages.join(", ")} | Sıkı tip denetimi, 800 satır kuralı ve otomatik CI entegrasyonu.`,
+          techContext: `${data.languages.join(", ")} | Sıkı tip denetimi, ${data.constraints.maxLines} satır kuralı ve otomatik CI entegrasyonu.`,
           activeContext: "Proje iskeletinin oluşturulması ve Memory Bank anayasa kural dosyasının yürürlüğe sokulması.",
           progress: "Temel mimari kararlaştırıldı. CI ve yerel pre-commit kancaları aktif hale getirildi.",
         },
@@ -48,7 +49,7 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData }) => {
           projectBrief: "Large-scale, high-performance, and AI-governed modular enterprise application platform.",
           productContext: "Prevent AI context drift across multiple developer sessions, providing zero-compromise architectural guardrails.",
           systemPatterns: "Modular Clean Architecture. Decoupled UI Layer, Core Logic, and Storage Adapters.",
-          techContext: `${data.languages.join(", ")} | Strict static typing, 800-line ceiling, automated CI pipeline.`,
+          techContext: `${data.languages.join(", ")} | Strict static typing, ${data.constraints.maxLines}-line ceiling, automated CI pipeline.`,
           activeContext: "Scaffolding repository foundations and loading initial Memory Bank guidelines.",
           progress: "Core patterns finalized. Local pre-commit guard and CI verification active.",
         },
@@ -158,8 +159,14 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData }) => {
           value={memoryBank.projectName}
           onChange={(e) => updateMemoryBank("projectName", e.target.value)}
           placeholder={isTr ? "Örn: my-awesome-project" : "e.g., my-awesome-project"}
-          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          aria-invalid={Boolean(projectNameError)}
+          className={`w-full bg-slate-950 border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 ${
+            projectNameError
+              ? "border-rose-600 focus:border-rose-500 focus:ring-rose-500"
+              : "border-slate-800 focus:border-indigo-500 focus:ring-indigo-500"
+          }`}
         />
+        {projectNameError && <p className="mt-2 text-xs text-rose-400">{projectNameError}</p>}
       </div>
 
       {/* Tabs & Editor Container */}
@@ -204,7 +211,7 @@ export const Step3MemoryBank: React.FC<Step3Props> = ({ data, updateData }) => {
               </span>
             </div>
             <span className="text-[11px] text-slate-500 font-mono">
-              {(memoryBank[activeTab] || "").length} karakter
+              {(memoryBank[activeTab] || "").length} / 5000 {isTr ? "karakter" : "chars"}
             </span>
           </div>
 

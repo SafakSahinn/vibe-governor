@@ -15,9 +15,9 @@ interface Step5Props {
 
 export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
   const isTr = data.locale === "tr";
-  const [selectedFile, setSelectedFile] = useState<GeneratedFile | null>(
-    files.length > 0 ? files[0] : null
-  );
+  const [selectedPath, setSelectedPath] = useState<string | null>(files[0]?.path ?? null);
+  const selectedFile = files.find((f) => f.path === selectedPath) ?? files[0] ?? null;
+  const [zipError, setZipError] = useState(false);
   const [cliCopied, setCliCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -26,9 +26,11 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
   const handleDownloadZip = async () => {
     try {
       setDownloading(true);
+      setZipError(false);
       await exportProjectZip(files, data.memoryBank.projectName);
     } catch (err) {
       console.error(err);
+      setZipError(true);
     } finally {
       setDownloading(false);
     }
@@ -79,6 +81,12 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
         </button>
       </div>
 
+      {zipError && (
+        <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-200 text-xs">
+          {isTr ? "ZIP paketi oluşturulamadı. Lütfen tekrar deneyin." : "Could not build the ZIP package. Please try again."}
+        </div>
+      )}
+
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
@@ -97,7 +105,7 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
           </div>
           <div>
             <div className="text-[11px] text-slate-400">{isTr ? "Dosya Sınırı" : "Line Ceiling"}</div>
-            <div className="text-base font-bold text-white font-mono">{data.constraints.maxLines} satır</div>
+            <div className="text-base font-bold text-white font-mono">{data.constraints.maxLines} {isTr ? "satır" : "lines"}</div>
           </div>
         </div>
 
@@ -107,7 +115,7 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
           </div>
           <div>
             <div className="text-[11px] text-slate-400">{isTr ? "Hedef AI Sayısı" : "Target AI Tools"}</div>
-            <div className="text-base font-bold text-white font-mono">{data.targetPlatforms.length} Araç</div>
+            <div className="text-base font-bold text-white font-mono">{data.targetPlatforms.length} {isTr ? "Araç" : "tools"}</div>
           </div>
         </div>
 
@@ -116,7 +124,7 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
             <Terminal className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[11px] text-slate-400">{isTr ? "Denetim Skoru" : "Doc Bar"}</div>
+            <div className="text-[11px] text-slate-400">{isTr ? "Dokümantasyon Barajı" : "Doc Threshold"}</div>
             <div className="text-base font-bold text-white font-mono">{data.constraints.docScoreThreshold} / 10</div>
           </div>
         </div>
@@ -149,9 +157,14 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
             )}
           </button>
         </div>
-        <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80 font-mono text-xs text-indigo-300 overflow-x-auto select-all">
+        <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80 font-mono text-xs text-indigo-300 break-all max-h-28 overflow-y-auto select-all">
           {cliCommand}
         </div>
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          {isTr
+            ? "Proje klasörünüzde çalıştırın (Node.js 18+ gerekir). --preset bu sihirbazdaki tüm seçimlerinizi taşır; aynı dosyalar yazılır, varsa .git/hooks/pre-commit kurulur. Mevcut dosyalar korunur (--force ile üzerine yazılır)."
+            : "Run it inside your project folder (requires Node.js 18+). --preset carries every choice made in this wizard; the same files are written and .git/hooks/pre-commit is installed when a git repo exists. Existing files are kept (use --force to overwrite)."}
+        </p>
       </div>
 
       {/* Main Two-Panel Layout (Left: File Tree, Right: Code Viewer) */}
@@ -161,7 +174,7 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
           <FileTree
             files={files}
             selectedFile={selectedFile}
-            onSelectFile={(f) => setSelectedFile(f)}
+            onSelectFile={(f) => setSelectedPath(f.path)}
             locale={data.locale}
           />
         </div>

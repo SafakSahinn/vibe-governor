@@ -8,8 +8,8 @@ import type { WizardFormData } from "../src/types/wizard";
 /**
  * vibe-governor CLI. Writes the same governance pack the web wizard exports.
  *
- *   npx -y github:SafakSahinn/vibe-governor init --preset=<from the web wizard>
- *   npx -y github:SafakSahinn/vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
+ *   npx -y vibe-governor init --preset=<from the web wizard>
+ *   npx -y vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
  */
 
 const VERSION = "1.1.0";

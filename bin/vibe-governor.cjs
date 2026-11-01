@@ -4802,7 +4802,7 @@ function buildPreCommitHook(locale) {
   return `#!/usr/bin/env bash
 # Git Pre-Commit Hook for AI Guidelines Verification
 # Install:  cp scripts/pre-commit-hook.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
-# (\`npx github:SafakSahinn/vibe-governor init\` installs it automatically.)
+# (\`npx vibe-governor init\` installs it automatically.)
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT" || exit 1

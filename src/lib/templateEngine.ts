@@ -115,8 +115,8 @@ export function generateProjectFiles(data: WizardFormData): GeneratedFile[] {
   return files;
 }
 
-/** npm package spec used by the one-line command (installable straight from GitHub). */
-export const CLI_PACKAGE = "github:SafakSahinn/vibe-governor";
+/** npm package spec used by the one-line command (published on npm). */
+export const CLI_PACKAGE = "vibe-governor";
 
 /** One-line terminal command reproducing exactly the current wizard state. */
 export function generateCliCommand(data: WizardFormData): string {

@@ -45,14 +45,14 @@
 Sihirbazın 5. adımındaki komut, tüm seçimleri `--preset` ile taşır ve aynı dosyaları doğrudan proje klasörüne yazar (Node.js 18+):
 
 ```bash
-npx -y github:SafakSahinn/vibe-governor init --preset=<sihirbazdan kopyalanan değer>
+npx -y vibe-governor init --preset=<sihirbazdan kopyalanan değer>
 # veya preset olmadan:
-npx -y github:SafakSahinn/vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
+npx -y vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
 ```
 
 - Mevcut dosyalar korunur (`--force` ile üzerine yazılır), `--dry-run` sadece listeler.
 - Klasörde git deposu varsa `.git/hooks/pre-commit` otomatik kurulur (`--no-hook` ile kapatılır).
-- Paket npm'e yayınlanırsa komut `npx vibe-governor init --preset=...` olarak kısalır.
+- GitHub sürümü de çalışır: `npx -y github:SafakSahinn/vibe-governor init ...`
 
 ## 🧱 Mimari
 

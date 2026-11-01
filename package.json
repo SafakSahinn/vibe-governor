@@ -1,8 +1,30 @@
 {
   "name": "vibe-governor",
   "version": "1.1.0",
-  "private": true,
   "description": "Vibe Governor web wizard + CLI: AI guidelines, Memory Bank and guard scripts for AI-assisted software and HDL projects.",
+  "keywords": [
+    "ai",
+    "vibe-coding",
+    "guidelines",
+    "memory-bank",
+    "claude",
+    "cursor",
+    "copilot",
+    "verilog",
+    "vhdl",
+    "pre-commit"
+  ],
+  "homepage": "https://safaksahinn.github.io/vibe-governor/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SafakSahinn/vibe-governor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SafakSahinn/vibe-governor/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "vibe-governor": "bin/vibe-governor.cjs"
   },

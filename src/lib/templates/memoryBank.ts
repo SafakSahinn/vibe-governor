@@ -33,7 +33,7 @@ function trFiles(d: WizardFormData, v: TemplateVars, safety: string): MemoryFile
   - [Modül A] -> [Modül B] (Arayüz/Interface üzerinden)
 `],
     ["techContext.md", `# Teknoloji Yığını ve Ortam Kısıtları
-- **Diller ve Araçlar:** ${d.languages.join(", ")}
+- **Diller ve Araçlar:** ${d.languages.join(", ") || "(henüz seçilmedi)"}
 - **Temel Bağımlılıklar ve Derleme Komutları:** ${mb.techContext || "Standart araç zinciri ve derleyici ayarları."}
 - **Kısıtlamalar:** ${v.MAX_LINES} satır sınırı, ${safety}
 `],
@@ -82,7 +82,7 @@ function enFiles(d: WizardFormData, v: TemplateVars, safety: string): MemoryFile
   - [Module A] -> [Module B] (via explicit interface)
 `],
     ["techContext.md", `# Tech Stack & Environment Constraints
-- **Primary Languages:** ${d.languages.join(", ")}
+- **Primary Languages:** ${d.languages.join(", ") || "(not selected yet)"}
 - **Key Dependencies & Build Commands:** ${mb.techContext || "Standard toolchain and compiler options."}
 - **Constraints:** ${v.MAX_LINES}-line ceiling, ${safety}
 `],

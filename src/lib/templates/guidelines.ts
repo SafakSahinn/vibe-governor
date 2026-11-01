@@ -343,13 +343,15 @@ function renderSections(sections: Section[], data: WizardFormData, chapter: numb
 export function buildGuidelinesTemplate(data: WizardFormData): string {
   const isTr = data.locale === "tr";
   const langs = data.languages.join(", ");
+  const scopeTr = langs ? `bu projede kullanılan dillerin (${langs})` : "bu projenin (henüz dil seçilmedi; dilden bağımsız kurallar)";
+  const scopeEn = langs ? `this project's languages (${langs})` : "this project (no language selected yet; language-independent rules)";
   const lines: string[] = [];
 
   if (isTr) {
     lines.push(
       "# Dile Özel Yapay Zeka Kodlama ve Mimari Kuralları (AI_GUIDELINES.md)",
       "",
-      `Bu doküman, bu projede kullanılan dillerin (${langs}) yapay zeka kodlama asistanlarınca uyulması gereken dile özel kısıtlamalarını, güvenlik kurallarını ve mimari sınırlarını tanımlar.`,
+      `Bu doküman, ${scopeTr} yapay zeka kodlama asistanlarınca uyulması gereken dile özel kısıtlamalarını, güvenlik kurallarını ve mimari sınırlarını tanımlar.`,
       "",
       "---",
       "",
@@ -364,7 +366,7 @@ export function buildGuidelinesTemplate(data: WizardFormData): string {
     lines.push(
       "# Language-Specific AI Coding & Architectural Rules (AI_GUIDELINES.md)",
       "",
-      `This document specifies language-specific constraints, safety enforcement rules, and architectural boundaries for AI coding assistants working on this project's languages (${langs}).`,
+      `This document specifies language-specific constraints, safety enforcement rules, and architectural boundaries for AI coding assistants working on ${scopeEn}.`,
       "",
       "---",
       "",

@@ -49,7 +49,9 @@ export const wizardSchema = z
   .object({
     locale: z.enum(["tr", "en"]),
     targetPlatforms: z.array(z.enum(TARGET_PLATFORMS)).min(1, "platforms_min"),
-    languages: z.array(z.enum(CODING_LANGUAGES)).min(1, "languages_min"),
+    // Optional: with no language only the language-independent rules apply
+    // (line limit, Memory Bank, documentation, tests).
+    languages: z.array(z.enum(CODING_LANGUAGES)),
     constraints: z.object({
       maxLines: z
         .number({ error: "max_lines_range" })

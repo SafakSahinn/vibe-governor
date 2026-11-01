@@ -70,6 +70,8 @@ const PLATFORMS: {
   },
 ];
 
+type ProjectType = "software" | "hardware" | "mixed" | "none";
+
 const SOFTWARE_LANGS: readonly CodingLanguage[] = SOFTWARE_LANGUAGES;
 const HARDWARE_LANGS: readonly CodingLanguage[] = HDL_LANGUAGES;
 
@@ -92,13 +94,34 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
     const exists = data.languages.includes(lang);
     let next: CodingLanguage[];
     if (exists) {
-      if (data.languages.length === 1) return;
-      next = data.languages.filter((l) => l !== lang);
+      next = data.languages.filter((l) => l !== lang); // an empty selection is allowed
+
     } else {
       next = [...data.languages, lang];
     }
     updateData({ languages: next });
   };
+
+  const isHdl = (l: CodingLanguage) => HARDWARE_LANGS.includes(l);
+  const selectedSw = data.languages.filter((l) => !isHdl(l));
+  const selectedHdl = data.languages.filter(isHdl);
+  const projectType: ProjectType =
+    selectedSw.length && selectedHdl.length ? "mixed" : selectedHdl.length ? "hardware" : selectedSw.length ? "software" : "none";
+
+  /** Quick project-type choice: keeps the user's picks of the kept group, adds a sensible default when empty. */
+  const applyProjectType = (type: ProjectType) => {
+    const sw = selectedSw.length ? selectedSw : (["TypeScript"] as CodingLanguage[]);
+    const hdl = selectedHdl.length ? selectedHdl : (["Verilog"] as CodingLanguage[]);
+    const next = type === "software" ? sw : type === "hardware" ? hdl : type === "mixed" ? [...sw, ...hdl] : [];
+    updateData({ languages: next });
+  };
+
+  const PROJECT_TYPES: { id: ProjectType; tr: string; en: string }[] = [
+    { id: "software", tr: "Yazılım", en: "Software" },
+    { id: "hardware", tr: "Donanım (HDL)", en: "Hardware (HDL)" },
+    { id: "mixed", tr: "Karma", en: "Mixed" },
+    { id: "none", tr: "Dil seçmeden", en: "No language" },
+  ];
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -213,6 +236,41 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
 
       {/* Project Types & Languages */}
       <div className="space-y-6 pt-2">
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <span id="project-type-label" className="text-sm font-semibold text-slate-200">
+              {isTr ? "Proje Türü" : "Project Type"}
+            </span>
+            <span className="text-xs text-slate-500">
+              {isTr ? "Dil seçimi isteğe bağlıdır" : "Language selection is optional"}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby="project-type-label">
+            {PROJECT_TYPES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => applyProjectType(t.id)}
+                aria-pressed={projectType === t.id}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+                  projectType === t.id
+                    ? "bg-indigo-600 text-white border-indigo-500"
+                    : "bg-slate-900/80 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200"
+                }`}
+              >
+                {isTr ? t.tr : t.en}
+              </button>
+            ))}
+          </div>
+          {projectType === "none" && (
+            <p className="mt-3 text-xs text-slate-400 p-2.5 rounded-lg bg-slate-900/70 border border-slate-800">
+              {isTr
+                ? "Dil seçilmedi: yalnızca dilden bağımsız kurallar uygulanır (satır sınırı, Memory Bank, dokümantasyon ve test kuralları). Dile özel güvenlik anahtarları pakete girmez."
+                : "No language selected: only language-independent rules apply (line limit, Memory Bank, documentation and test rules). Language-specific safety switches are not exported."}
+            </p>
+          )}
+        </div>
+
         {/* Software Languages */}
         <div>
           <label className="text-sm font-semibold text-slate-200 block mb-3">

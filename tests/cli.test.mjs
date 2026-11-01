@@ -213,10 +213,10 @@ test("invalid presets are rejected with a validation message", () => {
   const dir = tmpDir();
   const bad = runCli(["init", "--preset=%%%", `--dir=${dir}`], dir);
   assert.equal(bad.status, 1);
-  const cfg = baseConfig({ languages: [] });
+  const cfg = baseConfig({ targetPlatforms: [] });
   const res = runCli(["init", `--preset=${preset(cfg)}`, `--dir=${dir}`], dir);
   assert.equal(res.status, 1);
-  assert.match(res.stderr, /languages/);
+  assert.match(res.stderr, /targetPlatforms/);
   const dep = baseConfig({ automation: { includeCheckGuidelines: false } });
   assert.match(runCli(["init", `--preset=${preset(dep)}`, `--dir=${dir}`], dir).stderr, /checker_required/);
 });
@@ -255,6 +255,27 @@ test("AI_GUIDELINES only contains selected languages and enabled rules", () => {
   assert.doesNotMatch(g, /Latch Prevention/);
   assert.match(g, /500 lines/);
   assert.doesNotMatch(g, /\{\{[A-Z_]+\}\}/);
+});
+
+test("a project without any programming language is allowed (language-independent rules only)", opts, () => {
+  const dir = scaffold(baseConfig({ languages: [] }));
+  const g = fs.readFileSync(path.join(dir, "AI_GUIDELINES.md"), "utf8");
+  assert.match(g, /no language selected yet/);
+  assert.match(g, /## 0\. Universal Core Directives/);
+  assert.doesNotMatch(g, /## 1\./);
+  assert.match(fs.readFileSync(path.join(dir, ".memory_bank/techContext.md"), "utf8"), /\(not selected yet\)/);
+  assert.match(fs.readFileSync(path.join(dir, "scripts/check_guidelines.py"), "utf8"), /ENABLED_RULES: Set\[str\] = set\(\[\]\)/);
+  // Code that would violate language rules passes; the line limit still applies.
+  write(dir, "src/b.ts", "let a: any = 1;\n");
+  assert.equal(check(dir).code, 0);
+  write(dir, "src/big.ts", "x;\n".repeat(801));
+  assert.equal(check(dir).code, 1);
+});
+
+test("CLI accepts --languages= (empty) for a language-free pack", () => {
+  const dir = tmpDir();
+  const res = runCli(["init", "--languages=", `--dir=${dir}`, "--lang=en"], dir);
+  assert.equal(res.status, 0, res.stderr);
 });
 
 test("existing files are kept unless --force is given", () => {

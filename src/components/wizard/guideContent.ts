@@ -74,8 +74,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         title: { tr: "Platform ve diller", en: "Platforms & languages" },
         body: {
-          tr: "Kullandığınız AI araçlarını ve projenin dillerini seçin. Burada ayrıca üretilecek dosyaların dilini (TR/EN) belirlersiniz; arayüz dili sağ üstten ayrı seçilir.",
-          en: "Pick your AI tools and project languages. You also choose the language of the generated files (TR/EN) here; the interface language is chosen separately at the top right.",
+          tr: "Kullandığınız AI araçlarını, proje türünü (Yazılım / Donanım / Karma) ve dilleri seçin; dil seçimi isteğe bağlıdır. Burada ayrıca üretilecek dosyaların dilini (TR/EN) belirlersiniz; arayüz dili sağ üstten ayrı seçilir.",
+          en: "Pick your AI tools, the project type (Software / Hardware / Mixed) and languages; choosing a language is optional. You also choose the language of the generated files (TR/EN) here; the interface language is chosen separately at the top right.",
         },
       },
       {
@@ -166,6 +166,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: { tr: "Sık sorulan sorular", en: "FAQ" },
     steps: [
       { title: { tr: "Python kurulu olmak zorunda mı?", en: "Do I need Python?" }, body: { tr: "Sadece denetçi betiği için (Python 3.8+). Kural ve Memory Bank dosyaları Python olmadan da çalışır.", en: "Only for the checker script (Python 3.8+). Rule and Memory Bank files work without it." } },
+      { title: { tr: "Programlama dili seçmek zorunda mıyım?", en: "Do I have to pick a programming language?" }, body: { tr: "Hayır. Donanım projesi için \"Donanım (HDL)\" türünü seçmeniz yeterli; hiç dil seçmezseniz de dilden bağımsız kurallar (satır sınırı, Memory Bank, dokümantasyon, testler) uygulanır.", en: "No. For a hardware project just choose \"Hardware (HDL)\"; with no language at all the language-independent rules (line limit, Memory Bank, documentation, tests) still apply." } },
       { title: { tr: "Mevcut bir projeye kurabilir miyim?", en: "Can I add it to an existing project?" }, body: { tr: "Evet. Komut mevcut dosyaları atlar; önce denetçiyi çalıştırıp ihlalleri görün, gerekirse satır sınırını yükseltin.", en: "Yes. The command skips existing files; run the checker first to see violations and raise the line limit if needed." } },
       { title: { tr: "Bir kuralı sonradan kapatmak istersem?", en: "How do I turn a rule off later?" }, body: { tr: "Sihirbazda anahtarı kapatıp dosyaları yeniden üretin (--force) ya da scripts/check_guidelines.py içindeki ENABLED_RULES listesinden kuralı silin.", en: "Turn the switch off in the wizard and regenerate (--force), or remove the rule from ENABLED_RULES in scripts/check_guidelines.py." } },
       { title: { tr: "Denetçi her hatayı bulur mu?", en: "Does the checker catch everything?" }, body: { tr: "Hayır; hızlı ve yanlış alarm vermeyen sezgisel kontroller yapar. Derin inceleme için AUDIT_PROMPT.md ve derleyici/linter araçları birlikte kullanılmalıdır.", en: "No; it runs fast heuristic checks tuned to avoid false alarms. Use AUDIT_PROMPT.md together with compilers/linters for deep review." } },

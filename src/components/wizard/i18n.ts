@@ -3,7 +3,6 @@ import type { Language } from "@/types/wizard";
 /** Localized texts for the schema's validation error keys (see lib/schema.ts). */
 const ERRORS: Record<string, { tr: string; en: string }> = {
   platforms_min: { tr: "En az bir hedef AI aracı seçmelisiniz.", en: "Select at least one target AI platform." },
-  languages_min: { tr: "En az bir programlama/HDL dili seçmelisiniz.", en: "Select at least one programming/HDL language." },
   max_lines_range: { tr: "Satır sınırı 200 ile 1500 arasında bir tam sayı olmalı.", en: "Line limit must be an integer between 200 and 1500." },
   doc_score_range: { tr: "Dokümantasyon barajı 5 ile 10 arasında olmalı.", en: "Documentation threshold must be between 5 and 10." },
   project_name_required: { tr: "Proje adı boş bırakılamaz.", en: "Project name is required." },

@@ -42,6 +42,24 @@ describe("Wizard UI", () => {
     expect(document.documentElement.lang).toBe("en");
   });
 
+  it("allows a hardware-only project and a project without any language", async () => {
+    const { user, setUi, next } = setup();
+    await setUi("EN");
+    await user.click(screen.getByRole("button", { name: "Hardware (HDL)" }));
+    expect(screen.getByRole("button", { name: "Verilog" })).toHaveAttribute("aria-pressed", "true");
+    for (const lang of ["TypeScript", "Python", "Rust"]) {
+      expect(screen.getByRole("button", { name: lang })).toHaveAttribute("aria-pressed", "false");
+    }
+    expect(screen.getByRole("button", { name: "Hardware (HDL)" })).toHaveAttribute("aria-pressed", "true");
+
+    // Deselecting the last language is allowed too.
+    await user.click(screen.getByRole("button", { name: "Verilog" }));
+    expect(screen.getByRole("button", { name: "No language" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/only language-independent rules apply/)).toBeInTheDocument();
+    await next();
+    expect(await screen.findByText("2. Architecture & Constraint Settings")).toBeInTheDocument();
+  });
+
   it("platform cards are operable from the keyboard", async () => {
     const { user, setUi } = setup();
     await setUi("EN");

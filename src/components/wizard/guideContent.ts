@@ -125,6 +125,24 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     ],
   },
   {
+    id: "autofill",
+    title: { tr: "Memory Bank otomatik doldurma", en: "Memory Bank auto-fill" },
+    paragraphs: [
+      {
+        tr: "3. adımdaki alanlar önceki seçimlerinizden şöyle doldurulur. Dokunmadığınız alanlar ayarlar değiştikçe güncellenir; elle düzenlediğiniz metin korunur ve \"Otomatik metne dön\" bağlantısıyla geri alınabilir. Komut yolundaki init (preset olmadan) aynı alanları doldurur.",
+        en: "The step-3 fields are filled from your earlier choices as follows. Fields you haven't touched follow setting changes; text you edit by hand is kept and can be reset with the \"Restore automatic text\" link. The command-line init (without a preset) fills the same fields.",
+      },
+    ],
+    table: [
+      { key: "projectbrief.md", value: { tr: "Proje Özeti: proje türü ve diller, örn. \"TypeScript, Python ve Rust ile geliştirilen yazılım projesi.\"", en: "Project Brief: project type and languages, e.g. \"Software project built with TypeScript, Python and Rust.\"" } },
+      { key: "systemPatterns.md", value: { tr: "Sistem Desenleri: modüler yazılım ya da RTL hiyerarşisi, seçilen satır sınırıyla.", en: "System Patterns: modular software or an RTL hierarchy, with the chosen line limit." } },
+      { key: "techContext.md", value: { tr: "Teknoloji Yığını: her dilin tipik komutları (örn. Rust için `cargo build`, `cargo test`), denetçi komutu ve seçilen AI araçları.", en: "Tech Context: typical commands per language (e.g. `cargo build`, `cargo test` for Rust), the checker command and the selected AI tools." } },
+      { key: "activeContext.md", value: { tr: "Aktif Oturum: kurulan dosyalar ve sıradaki iş.", en: "Active Context: the installed files and the next task." } },
+      { key: "progress.md", value: { tr: "İlerleme: aktif kural sayısı, pre-commit kancası ve CI açık mı kapalı mı.", en: "Progress: number of active rules, whether the pre-commit hook and CI are on or off." } },
+      { key: "productContext.md", value: { tr: "Ürün Bağlamı: boş bırakılır; çözülen problem projeye özgü olduğu için ayarlardan çıkarılamaz, siz yazarsınız.", en: "Product Context: left empty; the problem being solved is specific to the project and can't be derived from settings, so you write it." } },
+    ],
+  },
+  {
     id: "install",
     title: { tr: "Projeye kurulum", en: "Installing into a project" },
     paragraphs: [

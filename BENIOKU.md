@@ -25,7 +25,18 @@
    - `techContext.md`: Teknolojiler, Bağımlılıklar, Derleme Komutları
    - `activeContext.md`: Mevcut Odak, Son Yapılanlar, Sıradaki Adımlar
    - `progress.md`: Çalışan Modüller, Tamamlanış Oranı, Teknik Borçlar
-   - Önceki adımlardan çıkarılabilen alanlar (özet, mimari, komutlar, aktif oturum, ilerleme) otomatik doldurulur; elle düzenlenen metin korunur
+   - Önceki adımlardan çıkarılabilen alanlar otomatik doldurulur:
+
+     | Alan | Neyle doluyor |
+     |---|---|
+     | Proje Özeti | Proje türü ve diller, örn. "TypeScript, Python ve Rust ile geliştirilen yazılım projesi." |
+     | Sistem Desenleri | Modüler yazılım ya da RTL hiyerarşisi, seçilen satır sınırıyla |
+     | Teknoloji Yığını | Her dilin tipik komutları (örn. Rust için `cargo build`, `cargo test`), denetçi komutu ve seçilen AI araçları |
+     | Aktif Oturum | Kurulan dosyalar ve sıradaki iş |
+     | İlerleme | Aktif kural sayısı, pre-commit kancası ve CI açık mı kapalı mı |
+     | Ürün Bağlamı | Boş bırakılır; çözülen problem projeye özgü olduğu için ayarlardan çıkarılamaz, kullanıcı yazar |
+
+   - Dokunulmayan alanlar ayarlar değiştikçe güncellenir; elle düzenlenen metin korunur ("Otomatik metne dön" bağlantısıyla geri alınabilir). CLI `init` (preset'siz) aynı alanları doldurur.
 
 4. **Adım 4: Otomasyon ve Denetçi Betikleri**
    - `scripts/check_guidelines.py`: Statik kod boyutu ve yasaklı anahtar kelime denetçisi

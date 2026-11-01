@@ -92,7 +92,9 @@ export const GuideModal: React.FC<Props> = ({ open, onClose }) => {
                       {s.table.map((row) => (
                         <div key={row.key} className="grid sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-1 sm:gap-4 px-3.5 py-2.5 bg-slate-900/40">
                           <dt className="font-mono text-xs text-indigo-300 break-words">{row.key}</dt>
-                          <dd className="text-slate-400">{t(row.value)}</dd>
+                          <dd className="text-slate-400">
+                            <RichText text={t(row.value)} />
+                          </dd>
                         </div>
                       ))}
                     </dl>

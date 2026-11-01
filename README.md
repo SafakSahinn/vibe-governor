@@ -67,6 +67,23 @@ Existing files are never overwritten unless you pass `--force`; `--dry-run` only
 
 Only the files for the tools you select are written.
 
+### Memory Bank auto-fill
+
+The Memory Bank fields that follow from your other settings are pre-written:
+
+| Field | Filled with |
+|---|---|
+| Project Brief | Project type and languages, e.g. "Software project built with TypeScript, Python and Rust." |
+| System Patterns | Modular software or an RTL hierarchy, with the chosen line limit |
+| Tech Context | Typical commands per language (e.g. `cargo build`, `cargo test` for Rust), the checker command and the selected AI tools |
+| Active Context | The installed files and the next task |
+| Progress | Number of active rules, whether the pre-commit hook and CI are on or off |
+| Product Context | Left empty: the problem being solved is project-specific and can't be derived from settings, so you write it |
+
+In the wizard, fields you haven't touched follow setting changes; text you edit by hand is kept
+(the "Restore automatic text" link brings the automatic version back). `init` without a preset fills
+the same fields.
+
 ## Supported languages and checker rules
 
 C, C++, C#, Java, JavaScript, TypeScript, Python, Go, Rust, Kotlin, Swift, PHP, Verilog, VHDL —

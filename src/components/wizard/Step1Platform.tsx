@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useUiLocale } from "./UiLocale";
+import { checkboxCardProps, FOCUS_RING } from "./a11y";
 import { HDL_LANGUAGES, SOFTWARE_LANGUAGES } from "@/lib/schema";
 import { CodingLanguage, TargetPlatform, WizardFormData } from "@/types/wizard";
 import { Bot, Terminal, Code2, Wind, Cpu, Sparkles, Check } from "lucide-react";
@@ -123,6 +124,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
           <button
             type="button"
             onClick={() => updateData({ locale: "tr" })}
+            aria-pressed={data.locale === "tr"}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               data.locale === "tr"
                 ? "bg-indigo-600 text-white shadow-sm"
@@ -134,6 +136,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
           <button
             type="button"
             onClick={() => updateData({ locale: "en" })}
+            aria-pressed={data.locale === "en"}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               data.locale === "en"
                 ? "bg-indigo-600 text-white shadow-sm"
@@ -163,8 +166,8 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
             return (
               <div
                 key={platform.id}
-                onClick={() => togglePlatform(platform.id)}
-                className={`relative cursor-pointer p-4 rounded-xl border transition-all duration-200 group flex flex-col justify-between ${
+                {...checkboxCardProps(isSelected, () => togglePlatform(platform.id), `${platform.name} (${platform.fileTarget})`)}
+                className={`${FOCUS_RING} relative cursor-pointer p-4 rounded-xl border transition-all duration-200 group flex flex-col justify-between ${
                   isSelected
                     ? "bg-indigo-950/40 border-indigo-500/60 shadow-lg shadow-indigo-950/50 ring-1 ring-indigo-500/30"
                     : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900"
@@ -223,6 +226,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
                   key={lang}
                   type="button"
                   onClick={() => toggleLanguage(lang)}
+                  aria-pressed={isSelected}
                   className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${
                     isSelected
                       ? "bg-slate-800 text-indigo-300 border-indigo-500/60 shadow-sm shadow-indigo-500/20"
@@ -259,6 +263,7 @@ export const Step1Platform: React.FC<Step1Props> = ({ data, updateData }) => {
                   key={lang}
                   type="button"
                   onClick={() => toggleLanguage(lang)}
+                  aria-pressed={isSelected}
                   className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${
                     isSelected
                       ? "bg-slate-800 text-cyan-300 border-cyan-500/60 shadow-sm shadow-cyan-500/20"

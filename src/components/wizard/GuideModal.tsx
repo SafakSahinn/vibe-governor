@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, X } from "lucide-react";
+import React, { useRef } from "react";
+import { BookOpen } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useUiLocale } from "./UiLocale";
 import { GUIDE_SECTIONS, type GuideText } from "./guideContent";
 import { SWITCHES } from "./SafetySwitches";
@@ -17,62 +17,26 @@ interface Props {
 export const GuideModal: React.FC<Props> = ({ open, onClose }) => {
   const { locale, isTr } = useUiLocale();
   const t = (x: GuideText) => x[locale];
-  const closeRef = useRef<HTMLButtonElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, onClose]);
 
   const jump = (id: string) => {
     bodyRef.current?.querySelector(`#guide-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-        >
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="guide-title"
-            className="w-full max-w-4xl max-h-[calc(100vh-2rem)] flex flex-col rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl overflow-hidden"
-            initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-800 bg-slate-900/90">
-              <div className="flex items-center gap-2.5">
-                <BookOpen className="w-5 h-5 text-indigo-400" />
-                <h2 id="guide-title" className="text-base font-bold text-white">
-                  {isTr ? "Vibe Governor Rehberi" : "Vibe Governor Guide"}
-                </h2>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        closeLabel={isTr ? "Kapat" : "Close"}
+        className="max-w-4xl max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden"
+      >
+            <div className="shrink-0 flex items-center gap-2.5 px-5 py-4 pr-14 border-b border-slate-800 bg-slate-900/90">
+              <BookOpen className="w-5 h-5 text-indigo-400" />
+              <div>
+                <DialogTitle>{isTr ? "Vibe Governor Rehberi" : "Vibe Governor Guide"}</DialogTitle>
+                <DialogDescription>
+                  {isTr ? "Ne yapar, ne işe yarar, nasıl çalışır" : "What it does, why it helps, how it works"}
+                </DialogDescription>
               </div>
-              <button
-                ref={closeRef}
-                type="button"
-                onClick={onClose}
-                aria-label={isTr ? "Kapat" : "Close"}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
             <nav className="shrink-0 flex flex-wrap gap-1.5 px-5 py-2.5 border-b border-slate-800 bg-slate-950">
@@ -161,9 +125,7 @@ export const GuideModal: React.FC<Props> = ({ open, onClose }) => {
                 </section>
               ))}
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   );
 };

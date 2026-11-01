@@ -14,7 +14,7 @@
 2. **Adım 2: Mimari ve Kısıtlar Yapılandırması**
    - Ayarlanabilir Dosya Satır Tavanı (Varsayılan 800 satır)
    - Dokümantasyon Kalite Barajı (Varsayılan 8/10)
-   - Dile Özel Güvenlik Anahtarları (21 anahtar): C güvensiz fonksiyonlar, C++ ham işaretçi, C# dynamic/async void, Java istisna/loglama, JavaScript var/==, TypeScript any, Python tip ipuçları/global, Go hata kontrolü, Rust unsafe/clone, Kotlin !!/GlobalScope, Swift zorla açma, PHP strict_types/eval, HDL atama & latch
+   - Dile Özel Güvenlik Anahtarları (23 anahtar): C güvensiz fonksiyonlar ve malloc NULL kontrolü, C++ ham işaretçi, C# dynamic/async void, Java istisna/loglama, JavaScript var/==, TypeScript any, Python tip ipuçları/global, Go hata kontrolü, Rust unsafe/clone, Kotlin !!/GlobalScope, Swift zorla açma, PHP strict_types/eval/hazırlanmış SQL, HDL atama, latch ve VHDL duyarlılık listesi
 
 3. **Adım 3: Memory Bank Formu (6 Çekirdek Dosya)**
    - `projectbrief.md`: Proje Vizyonu ve Çekirdek Hedefler
@@ -65,11 +65,15 @@ npx -y vibe-governor init --name=my-app --languages=Rust,Verilog --lang=en
 - `src/lib/templates/` — `AI_GUIDELINES.md`, IDE kural dosyaları, Memory Bank, `check_guidelines.py`, kanca/CI/denetim/.gitignore şablonları
 - `src/lib/templateEngine.ts` — `{{PLACEHOLDER}}` motoru ve dosya üretimi
 - `cli/index.ts` → `bin/vibe-governor.cjs` (esbuild ile tek dosya, bağımlılıksız)
+- `src/components/ui/` — shadcn/ui bileşenleri (Button, Switch, Dialog; Radix tabanlı, `components.json` ile `npx shadcn add` uyumlu)
+- Yığın: Next.js 16 (statik export), React 19, Tailwind CSS 3, React Hook Form + Zod 4, Monaco Editor, Framer Motion
 
 ## 🧪 Test
 
 ```bash
-npm test   # CLI'yı derler, paket üretir, Python denetçisini iyi/kötü örnek kodlarla çalıştırır
+npm test       # CLI'yı derler; üretilen paketi ve Python denetçisini iyi/kötü örneklerle, ardından arayüzü (Vitest + Testing Library) test eder
+npm run test:ui  # yalnızca arayüz testleri
+npm run lint   # ESLint (eslint-config-next)
 ```
 
 `cli/` veya `src/lib/` değiştiğinde `npm run build:cli` ile `bin/vibe-governor.cjs` yeniden üretilip commit'lenmelidir (npx GitHub'dan bu dosyayı çalıştırır).

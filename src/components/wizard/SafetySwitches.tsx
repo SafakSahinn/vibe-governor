@@ -3,6 +3,7 @@
 import React from "react";
 import { ShieldCheck } from "lucide-react";
 import { RichText } from "./RichText";
+import { Switch } from "@/components/ui/switch";
 import type { CodingLanguage, ProjectConstraints, WizardFormData } from "@/types/wizard";
 
 type BoolKey = {
@@ -37,6 +38,12 @@ const NEW_LANGUAGE_SWITCHES: SwitchDef[] = [
     titleTr: "Güvensiz Fonksiyon Yasağı", titleEn: "Ban Unsafe Functions",
     descTr: "`gets`, `strcpy`, `strcat`, `sprintf` yerine `fgets`, `strncpy`, `snprintf` gibi sınır denetimli karşılıkları zorunlu tutar.",
     descEn: "Requires bounded `fgets`, `strncpy`, `snprintf` instead of `gets`, `strcpy`, `strcat`, `sprintf`.",
+  },
+  {
+    key: "cCheckMalloc", badge: "C", badgeClass: SLATE, languages: ["C"],
+    titleTr: "malloc NULL Kontrolü", titleEn: "malloc NULL Checks",
+    descTr: "Her `malloc`/`calloc`/`realloc` sonucunun hemen ardından NULL için denetlenmesini ister.",
+    descEn: "Every `malloc`/`calloc`/`realloc` result must be checked for NULL right after the call.",
   },
   {
     key: "csNoDynamic", badge: "C#", badgeClass: GREEN, languages: ["C#"],
@@ -104,6 +111,12 @@ const NEW_LANGUAGE_SWITCHES: SwitchDef[] = [
     descTr: "Kod enjeksiyonuna yol açan `eval()` kullanımını yasaklar.",
     descEn: "Bans `eval()` (code injection risk).",
   },
+  {
+    key: "phpPreparedStatements", badge: "PHP", badgeClass: ROSE, languages: ["PHP"],
+    titleTr: "Hazırlanmış SQL İfadeleri", titleEn: "Prepared SQL Statements",
+    descTr: "SQL sorgusuna değişken gömmeyi (`\"... $id\"`, `. $name`) yasaklar; `prepare` + bağlama ister.",
+    descEn: "Bans interpolating variables into SQL (`\"... $id\"`, `. $name`); requires `prepare` + binding.",
+  },
 ];
 
 /** Switch cards are shown in the language order of step 1. */
@@ -163,8 +176,8 @@ const BASE_SWITCHES: SwitchDef[] = [
   {
     key: "hdlLatchPrevention", badge: "Verilog & VHDL", badgeClass: CYAN, languages: ["Verilog", "VHDL"],
     titleTr: "Mandal (Latch) Önleme", titleEn: "Latch Prevention",
-    descTr: "Kombinasyonel `case/if` bloklarında `default` ve eksiksiz duyarlılık listesi zorunludur.",
-    descEn: "Combinational `case/if` blocks need a `default` and complete sensitivity lists.",
+    descTr: "Verilog kombinasyonel `case` bloklarında `default`, VHDL kombinasyonel process'lerde eksiksiz duyarlılık listesi zorunludur.",
+    descEn: "Verilog combinational `case` needs a `default`; VHDL combinational processes need complete sensitivity lists.",
   },
 ];
 
@@ -218,11 +231,11 @@ export const SafetySwitches: React.FC<Props> = ({ data, isTr, onToggle }) => (
                 </div>
                 <p className="text-xs text-slate-400 mt-2"><RichText text={isTr ? s.descTr : s.descEn} /></p>
               </div>
-              <input
-                type="checkbox"
+              <Switch
                 checked={checked}
-                onChange={(e) => onToggle(s.key, e.target.checked)}
-                className="w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer mt-1 shrink-0"
+                onCheckedChange={(v) => onToggle(s.key, v)}
+                aria-label={`${s.badge}: ${isTr ? s.titleTr : s.titleEn}`}
+                className="mt-0.5"
               />
             </div>
           </label>

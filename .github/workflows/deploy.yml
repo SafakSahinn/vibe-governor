@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Setup Pages
@@ -33,7 +33,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify generated pack (CLI + checker tests)
+      - name: Lint
+        run: npm run lint
+
+      - name: Verify generated pack and UI (CLI, checker and UI tests)
         run: npm test
 
       - name: Ensure committed CLI bundle is up to date

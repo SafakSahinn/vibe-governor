@@ -1,0 +1,105 @@
+import { describe, expect, it } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Wizard } from "@/components/wizard/Wizard";
+import { UiLocaleProvider } from "@/components/wizard/UiLocale";
+
+function setup() {
+  const user = userEvent.setup();
+  render(
+    <UiLocaleProvider>
+      <Wizard />
+    </UiLocaleProvider>
+  );
+  const setUi = async (l: "TR" | "EN") => user.click(screen.getByRole("button", { name: l }));
+  const next = async () => user.click(screen.getByRole("button", { name: /Sonraki Adım|Next Step/ }));
+  return { user, setUi, next };
+}
+
+describe("Wizard UI", () => {
+  it("blocks leaving step 3 when the project name is empty", async () => {
+    const { user, setUi, next } = setup();
+    await setUi("TR");
+    await next();
+    await next();
+    expect(await screen.findByText("3. Memory Bank Formu (6 Çekirdek Dosya)")).toBeInTheDocument();
+    await user.clear(screen.getByPlaceholderText("Örn: my-awesome-project"));
+    await next();
+    expect((await screen.findAllByText("Proje adı boş bırakılamaz.")).length).toBeGreaterThan(0);
+    expect(screen.getByText("3. Memory Bank Formu (6 Çekirdek Dosya)")).toBeInTheDocument();
+  });
+
+  it("switches the interface language; output language follows until chosen in step 1", async () => {
+    const { user, setUi } = setup();
+    await setUi("EN");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Vibe Governor Web Wizard");
+    expect(screen.getByRole("button", { name: /English \(EN\)/ })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: /Türkçe \(TR\)/ }));
+    await setUi("TR");
+    await setUi("EN");
+    expect(screen.getByRole("button", { name: /Türkçe \(TR\)/ })).toHaveAttribute("aria-pressed", "true");
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("platform cards are operable from the keyboard", async () => {
+    const { user, setUi } = setup();
+    await setUi("EN");
+    const card = screen.getByRole("checkbox", { name: "Cursor IDE (.cursorrules)" });
+    expect(card).toHaveAttribute("aria-checked", "true");
+    card.focus();
+    await user.keyboard(" ");
+    expect(card).toHaveAttribute("aria-checked", "false");
+    await user.keyboard("{Enter}");
+    expect(card).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("safety switches toggle and new languages are offered", async () => {
+    const { user, setUi, next } = setup();
+    await setUi("EN");
+    for (const lang of ["C", "C#", "Java", "JavaScript", "Kotlin", "Swift", "PHP"]) {
+      expect(screen.getByRole("button", { name: lang })).toBeInTheDocument();
+    }
+    await next();
+    const sw = await screen.findByRole("switch", { name: "Java: Exception Discipline" });
+    expect(sw).toHaveAttribute("aria-checked", "true");
+    await user.click(sw);
+    expect(sw).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("hook and CI depend on the checker script in step 4", async () => {
+    const { user, setUi, next } = setup();
+    await setUi("EN");
+    await next();
+    await next();
+    await next();
+    const checker = await screen.findByRole("checkbox", { name: /Static AI Guidelines Checker/ });
+    const hook = screen.getByRole("checkbox", { name: /Pre-Commit Blocking Hook/ });
+    const ci = screen.getByRole("checkbox", { name: /GitHub Actions CI\/CD/ });
+    await user.click(checker);
+    expect(checker).toHaveAttribute("aria-checked", "false");
+    expect(hook).toHaveAttribute("aria-checked", "false");
+    expect(ci).toHaveAttribute("aria-checked", "false");
+    await user.click(hook);
+    expect(hook).toHaveAttribute("aria-checked", "true");
+    expect(checker).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("step 5 shows the one-line command carrying the preset", async () => {
+    const { setUi, next } = setup();
+    await setUi("EN");
+    for (let i = 0; i < 4; i++) await next();
+    expect(await screen.findByText(/npx -y vibe-governor init --preset=[A-Za-z0-9_-]+/)).toBeInTheDocument();
+  });
+
+  it("opens the guide and closes it with Escape", async () => {
+    const { user, setUi } = setup();
+    await setUi("TR");
+    await user.click(screen.getByRole("button", { name: "Rehber" }));
+    const dialog = await screen.findByRole("dialog", { name: "Vibe Governor Rehberi" });
+    expect(within(dialog).getAllByText("Denetçinin yakaladığı kurallar").length).toBeGreaterThan(0);
+    expect(within(dialog).getByText("malloc NULL Kontrolü")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});

@@ -24,10 +24,10 @@ export const CODING_LANGUAGES = [...SOFTWARE_LANGUAGES, ...HDL_LANGUAGES] as con
 
 /** Every boolean safety switch of step 2 (single list used by schema, defaults and CLI). */
 export const SAFETY_SWITCH_KEYS = [
-  "cBanUnsafeFunctions", "cppNoRawPointers", "csNoDynamic", "csNoAsyncVoid",
+  "cBanUnsafeFunctions", "cCheckMalloc", "cppNoRawPointers", "csNoDynamic", "csNoAsyncVoid",
   "javaExceptionHandling", "javaNoSystemOut", "jsNoVar", "jsStrictEquality", "tsNoAny",
   "pyTypeHints", "pyNoGlobalState", "goCheckErrors", "rustNoUnsafe", "rustLimitClone",
-  "ktNoForceUnwrap", "ktNoGlobalScope", "swiftNoForceUnwrap", "phpStrictTypes", "phpNoEval",
+  "ktNoForceUnwrap", "ktNoGlobalScope", "swiftNoForceUnwrap", "phpStrictTypes", "phpNoEval", "phpPreparedStatements",
   "hdlAssignmentRules", "hdlLatchPrevention",
 ] as const;
 export type SafetySwitchKey = (typeof SAFETY_SWITCH_KEYS)[number];
@@ -52,12 +52,12 @@ export const wizardSchema = z
     languages: z.array(z.enum(CODING_LANGUAGES)).min(1, "languages_min"),
     constraints: z.object({
       maxLines: z
-        .number({ invalid_type_error: "max_lines_range" })
+        .number({ error: "max_lines_range" })
         .int("max_lines_range")
         .min(MAX_LINES_MIN, "max_lines_range")
         .max(MAX_LINES_MAX, "max_lines_range"),
       docScoreThreshold: z
-        .number({ invalid_type_error: "doc_score_range" })
+        .number({ error: "doc_score_range" })
         .int("doc_score_range")
         .min(DOC_SCORE_MIN, "doc_score_range")
         .max(DOC_SCORE_MAX, "doc_score_range"),
@@ -88,7 +88,7 @@ export const wizardSchema = z
     const a = data.automation;
     if ((a.includePreCommitHook || a.includeGitHubCI) && !a.includeCheckGuidelines) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["automation", "includeCheckGuidelines"],
         message: "checker_required",
       });

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, type FieldErrors, type FieldPath } from "react-hook-form";
+import { useForm, useWatch, type FieldErrors, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2, AlertTriangle, BookOpen, Languages } from "lucide-react";
@@ -17,6 +17,7 @@ import { Step5Export } from "./Step5Export";
 import { errorText } from "./i18n";
 import { useUiLocale } from "./UiLocale";
 import { GuideModal } from "./GuideModal";
+import { Button } from "@/components/ui/button";
 
 const INITIAL_DATA: WizardFormData = {
   ...DEFAULT_FORM_DATA,
@@ -65,7 +66,7 @@ function collectErrors(errors: FieldErrors<WizardFormData>, fields: FieldPath<Wi
 export const Wizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const {
-    watch,
+    control,
     setValue,
     trigger,
     formState: { errors },
@@ -75,7 +76,8 @@ export const Wizard: React.FC = () => {
     mode: "onChange",
   });
 
-  const formData = watch();
+  // Full form state; defaults fill every field, so the value is always complete.
+  const formData = useWatch({ control }) as WizardFormData;
   const { locale: uiLocale, isTr, setLocale: setUiLocale } = useUiLocale();
   const [guideOpen, setGuideOpen] = useState(false);
   // The output language follows the interface language until the user picks one in step 1.
@@ -84,7 +86,7 @@ export const Wizard: React.FC = () => {
     if (!outputLocaleTouched.current) setValue("locale", uiLocale);
   }, [uiLocale, setValue]);
   const formKey = JSON.stringify(formData);
-  const generatedFiles = useMemo(() => generateProjectFiles(formData), [formKey]);
+  const generatedFiles = useMemo(() => generateProjectFiles(JSON.parse(formKey) as WizardFormData), [formKey]);
 
   const updateFormData = (fields: Partial<WizardFormData>) => {
     if (fields.locale !== undefined) outputLocaleTouched.current = true;
@@ -114,14 +116,10 @@ export const Wizard: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-end gap-2 mb-6">
-        <button
-          type="button"
-          onClick={() => setGuideOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition-all"
-        >
-          <BookOpen className="w-4 h-4 text-indigo-400" />
+        <Button variant="outline" size="sm" onClick={() => setGuideOpen(true)}>
+          <BookOpen className="text-indigo-400" />
           <span>{isTr ? "Rehber" : "Guide"}</span>
-        </button>
+        </Button>
         <div
           className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800"
           role="group"
@@ -204,30 +202,17 @@ export const Wizard: React.FC = () => {
       </main>
 
       <footer className="mt-10 pt-6 border-t border-slate-800/80 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => goTo(currentStep - 1)}
-          disabled={currentStep === 1}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-            currentStep === 1
-              ? "opacity-40 cursor-not-allowed border-slate-800 text-slate-600 bg-slate-900/50"
-              : "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white"
-          }`}
-        >
-          <ArrowLeft className="w-4 h-4" />
+        <Button variant="outline" onClick={() => goTo(currentStep - 1)} disabled={currentStep === 1}>
+          <ArrowLeft />
           <span>{isTr ? "Önceki Adım" : "Back"}</span>
-        </button>
+        </Button>
 
         <div className="flex items-center gap-3">
           {currentStep < 5 ? (
-            <button
-              type="button"
-              onClick={() => goTo(currentStep + 1)}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
+            <Button size="lg" onClick={() => goTo(currentStep + 1)}>
               <span>{isTr ? "Sonraki Adım" : "Next Step"}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              <ArrowRight />
+            </Button>
           ) : (
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-4 py-2 rounded-xl">
               <CheckCircle2 className="w-4 h-4" />

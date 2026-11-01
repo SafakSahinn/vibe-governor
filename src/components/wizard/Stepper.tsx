@@ -67,6 +67,7 @@ export const Stepper: React.FC<StepperProps> = ({
               key={stepNumber}
               type="button"
               onClick={() => onStepClick(stepNumber)}
+              aria-current={isActive ? "step" : undefined}
               className="flex flex-col items-center group relative z-10 focus:outline-none"
             >
               <div

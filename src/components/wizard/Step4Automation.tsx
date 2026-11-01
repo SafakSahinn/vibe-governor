@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useUiLocale } from "./UiLocale";
+import { checkboxCardProps, FOCUS_RING } from "./a11y";
 import { AutomationOptions, WizardFormData } from "@/types/wizard";
 import { Terminal, GitBranch, ShieldAlert, Cpu, FileQuestion, Check } from "lucide-react";
 
@@ -121,8 +122,8 @@ export const Step4Automation: React.FC<Step4Props> = ({ data, updateData }) => {
           return (
             <div
               key={item.key}
-              onClick={() => toggleOption(item.key)}
-              className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+              {...checkboxCardProps(isSelected, () => toggleOption(item.key), `${isTr ? item.titleTr : item.titleEn} (${item.targetPath})`)}
+              className={`${FOCUS_RING} p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                 isSelected
                   ? "bg-indigo-950/30 border-indigo-500/50 ring-1 ring-indigo-500/30 shadow-md"
                   : "bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900"

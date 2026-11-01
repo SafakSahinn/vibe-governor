@@ -49,3 +49,8 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 1);
 }
+
+/* Hidden while the boot script waits for the English UI (see layout.tsx). */
+html.vg-locale-pending body {
+  visibility: hidden;
+}

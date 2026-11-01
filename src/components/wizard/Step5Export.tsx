@@ -6,6 +6,7 @@ import { GeneratedFile, WizardFormData } from "@/types/wizard";
 import { generateCliCommand } from "@/lib/templateEngine";
 import { exportProjectZip } from "@/lib/exporter";
 import { FileTree } from "./FileTree";
+import { Button } from "@/components/ui/button";
 import { CodeViewer } from "./CodeViewer";
 import { Download, Terminal, Copy, Check, Sparkles, FolderArchive, Layers, AlertTriangle } from "lucide-react";
 
@@ -66,13 +67,8 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
         </div>
 
         {/* Big Download ZIP Button */}
-        <button
-          type="button"
-          onClick={handleDownloadZip}
-          disabled={downloading}
-          className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
-        >
-          <Download className="w-4 h-4 stroke-[2.5]" />
+        <Button variant="gradient" size="lg" onClick={handleDownloadZip} disabled={downloading} className="shrink-0">
+          <Download className="stroke-[2.5]" />
           <span>
             {downloading
               ? isTr
@@ -82,7 +78,7 @@ export const Step5Export: React.FC<Step5Props> = ({ data, files }) => {
               ? "Proje Paketini İndir (.ZIP)"
               : "Download Project Pack (.ZIP)"}
           </span>
-        </button>
+        </Button>
       </div>
 
       {zipError && (
